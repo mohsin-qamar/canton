@@ -2,62 +2,180 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#b91c1c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Canton Fair Tracker</title>
+<meta name="apple-mobile-web-app-title" content="BATIK">
+<title>BATIK - Canton Fair Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: #f5f5f4; color: #1c1917; padding-bottom: 90px; }
-  .header { background: #b91c1c; color: white; padding: 12px 16px; position: sticky; top: 0; z-index: 30; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; }
-  .header h1 { margin: 0; font-size: 18px; flex: 1; }
-  .header .subtitle { font-size: 12px; color: #fecaca; margin-top: 2px; }
-  .header button { background: transparent; border: none; color: white; padding: 6px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .header button:active { background: rgba(255,255,255,0.2); }
-  .icon-btn { width: 36px; height: 36px; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #f5f5f4; color: #1c1917; padding-bottom: 100px;
+    -webkit-text-size-adjust: 100%;
+  }
 
-  .search-bar { background: white; padding: 12px 16px; border-bottom: 1px solid #e7e5e4; position: sticky; top: 60px; z-index: 20; }
-  .search-bar input { width: 100%; padding: 12px 16px 12px 40px; background: #f5f5f4; border: none; border-radius: 8px; font-size: 16px; outline: none; }
+  /* Prevent input zoom on iOS */
+  input, textarea, select { font-size: 16px !important; }
+
+  /* === HEADER === */
+  .header {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    color: white; padding: 14px 16px;
+    padding-top: calc(14px + env(safe-area-inset-top));
+    position: sticky; top: 0; z-index: 30;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .header-title { flex: 1; min-width: 0; }
+  .header h1 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.2; }
+  .header .subtitle { font-size: 12px; color: #fecaca; margin-top: 3px; }
+  .header button {
+    background: rgba(255,255,255,0.1); border: none; color: white;
+    padding: 8px; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    min-width: 40px; min-height: 40px; font-size: 18px;
+  }
+  .header button:active { background: rgba(255,255,255,0.25); }
+
+  /* === BATIK LOGO === */
+  .batik-logo {
+    font-family: 'Cinzel', 'Trajan Pro', 'Optima', Georgia, 'Times New Roman', serif;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    font-size: 22px;
+    line-height: 1;
+  }
+  .batik-logo-large {
+    font-family: 'Cinzel', 'Trajan Pro', 'Optima', Georgia, 'Times New Roman', serif;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    font-size: 26px;
+    line-height: 1;
+    padding-right: 0.3em;
+  }
+
+  /* === SEARCH & FILTERS === */
+  .search-section { background: white; border-bottom: 1px solid #e7e5e4; }
+  .search-bar { padding: 12px 16px 8px; position: relative; }
+  .search-bar input {
+    width: 100%; padding: 12px 16px 12px 40px; background: #f5f5f4;
+    border: none; border-radius: 10px; font-size: 16px; outline: none;
+  }
   .search-bar input:focus { background: white; box-shadow: 0 0 0 2px #b91c1c; }
-  .search-bar { position: relative; }
-  .search-bar::before { content: "🔍"; position: absolute; left: 30px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .search-icon { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0.4; font-size: 16px; }
 
+  .filter-row { display: flex; gap: 6px; overflow-x: auto; padding: 8px 16px 12px; -webkit-overflow-scrolling: touch; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    padding: 6px 14px; border-radius: 16px; border: 1px solid #d6d3d1;
+    background: white; font-size: 13px; cursor: pointer; white-space: nowrap;
+    color: #44403c;
+  }
+  .filter-chip.active { background: #b91c1c; color: white; border-color: #b91c1c; }
+
+  /* === VENDOR LIST === */
   .vendor-list { background: white; }
-  .vendor-item { display: flex; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid #e7e5e4; cursor: pointer; }
-  .vendor-item:active { background: #f5f5f4; }
-  .vendor-avatar { width: 48px; height: 48px; border-radius: 8px; background: #fee2e2; color: #b91c1c; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; overflow: hidden; }
+  .vendor-item {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+    border-bottom: 1px solid #f5f5f4; cursor: pointer;
+  }
+  .vendor-item:active { background: #fafaf9; }
+  .vendor-avatar {
+    width: 52px; height: 52px; border-radius: 10px; background: #fee2e2;
+    color: #b91c1c; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 18px; flex-shrink: 0; overflow: hidden;
+  }
   .vendor-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .vendor-info { flex: 1; min-width: 0; }
-  .vendor-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .vendor-meta { font-size: 13px; color: #78716c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .vendor-badge { background: #f5f5f4; color: #44403c; font-size: 11px; padding: 4px 8px; border-radius: 12px; flex-shrink: 0; }
+  .vendor-name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vendor-meta { font-size: 12px; color: #78716c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .vendor-stars { color: #f59e0b; font-size: 11px; margin-top: 3px; letter-spacing: 1px; }
+  .vendor-stars .empty { color: #d6d3d1; }
+  .vendor-badge {
+    background: #f5f5f4; color: #44403c; font-size: 11px;
+    padding: 4px 10px; border-radius: 12px; flex-shrink: 0; font-weight: 500;
+  }
 
   .empty { padding: 60px 24px; text-align: center; color: #78716c; }
   .empty-icon { font-size: 48px; opacity: 0.3; margin-bottom: 12px; }
 
-  .fab { position: fixed; bottom: 24px; right: 24px; width: 64px; height: 64px; border-radius: 50%; background: #b91c1c; color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 28px; cursor: pointer; z-index: 40; }
-  .fab:active { background: #991b1b; }
+  /* === FAB === */
+  .fab {
+    position: fixed; bottom: calc(24px + env(safe-area-inset-bottom)); right: 24px;
+    width: 64px; height: 64px; border-radius: 50%; background: #b91c1c; color: white;
+    border: none; box-shadow: 0 4px 16px rgba(185,28,28,0.4); font-size: 32px;
+    cursor: pointer; z-index: 40; line-height: 1;
+  }
+  .fab:active { background: #991b1b; transform: scale(0.95); }
 
+  /* === FORMS === */
   .form { padding: 16px; }
   .section { margin-bottom: 16px; }
-  .section-title { font-size: 11px; font-weight: 600; color: #78716c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; padding-left: 4px; }
-  .section-body { background: white; border-radius: 8px; padding: 12px; border: 1px solid #e7e5e4; }
-  .field { margin-bottom: 12px; }
-  .field:last-child { margin-bottom: 0; }
-  .field label { display: block; font-size: 12px; font-weight: 500; color: #57534e; margin-bottom: 4px; }
-  .field input, .field textarea, .field select {
-    width: 100%; padding: 10px 12px; border: 1px solid #d6d3d1; border-radius: 8px;
-    font-size: 16px; font-family: inherit; background: white; outline: none;
+  .section-title {
+    font-size: 11px; font-weight: 700; color: #78716c;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 8px; padding-left: 4px;
   }
-  .field input:focus, .field textarea:focus, .field select:focus { border-color: #b91c1c; box-shadow: 0 0 0 2px rgba(185,28,28,0.2); }
+  .section-body { background: white; border-radius: 10px; padding: 14px; border: 1px solid #e7e5e4; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: #57534e; margin-bottom: 6px; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 11px 12px; border: 1px solid #d6d3d1; border-radius: 8px;
+    font-size: 16px; font-family: inherit; background: white; outline: none;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: #b91c1c; box-shadow: 0 0 0 3px rgba(185,28,28,0.15);
+  }
+  .field textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { padding: 6px 12px; border-radius: 16px; border: 1px solid #d6d3d1; background: white; font-size: 13px; cursor: pointer; }
-  .chip.active { background: #b91c1c; color: white; border-color: #b91c1c; }
+  /* Phone field with +86 prefix */
+  .phone-input { display: flex; }
+  .phone-prefix {
+    background: #f5f5f4; border: 1px solid #d6d3d1; border-right: none;
+    padding: 11px 12px; border-radius: 8px 0 0 8px; font-size: 16px;
+    color: #44403c; font-weight: 600; min-width: 56px; text-align: center;
+  }
+  .phone-input input {
+    border-radius: 0 8px 8px 0 !important;
+    flex: 1;
+  }
 
-  .btn { padding: 12px 16px; border-radius: 8px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; }
+  /* Chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 8px 14px; border-radius: 18px; border: 1px solid #d6d3d1;
+    background: white; font-size: 14px; cursor: pointer; user-select: none;
+    color: #44403c;
+  }
+  .chip.active { background: #b91c1c; color: white; border-color: #b91c1c; }
+  .chip.add-custom { border-style: dashed; color: #78716c; }
+
+  /* Star rating */
+  .star-rating { display: flex; gap: 4px; padding: 4px 0; }
+  .star {
+    font-size: 32px; color: #d6d3d1; cursor: pointer; user-select: none;
+    transition: transform 0.1s; line-height: 1;
+  }
+  .star.active { color: #f59e0b; }
+  .star:active { transform: scale(1.2); }
+  .rating-label { font-size: 12px; color: #78716c; margin-top: 4px; min-height: 16px; }
+
+  /* === BUTTONS === */
+  .btn {
+    padding: 13px 16px; border-radius: 10px; border: none;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: inherit; min-height: 48px;
+  }
   .btn-primary { background: #b91c1c; color: white; }
   .btn-primary:active { background: #991b1b; }
   .btn-secondary { background: #e7e5e4; color: #292524; }
@@ -67,60 +185,116 @@
   .btn-row { display: flex; gap: 8px; }
   .btn-row .btn { flex: 1; }
 
-  .photo-capture { border: 2px dashed #d6d3d1; border-radius: 8px; padding: 24px; text-align: center; color: #78716c; cursor: pointer; background: white; }
-  .photo-capture:active { border-color: #b91c1c; color: #b91c1c; }
-  .photo-grid { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-  .photo-thumb { position: relative; flex-shrink: 0; width: 96px; height: 96px; border-radius: 8px; overflow: hidden; background: #f5f5f4; }
+  /* === PHOTO === */
+  .photo-capture-large {
+    border: 2px dashed #d6d3d1; border-radius: 10px; padding: 24px;
+    text-align: center; color: #78716c; cursor: pointer; background: white;
+    display: block;
+  }
+  .photo-capture-large:active { border-color: #b91c1c; color: #b91c1c; }
+  .photo-grid { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .photo-thumb { position: relative; flex-shrink: 0; width: 96px; height: 96px; border-radius: 10px; overflow: hidden; background: #f5f5f4; }
   .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-thumb .remove { position: absolute; top: 2px; right: 2px; background: #b91c1c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
-  .add-photo { width: 96px; height: 96px; flex-shrink: 0; border: 2px dashed #d6d3d1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; cursor: pointer; color: #78716c; font-size: 11px; }
+  .photo-thumb .remove {
+    position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7);
+    color: white; border: none; border-radius: 50%; width: 22px; height: 22px;
+    cursor: pointer; font-size: 12px;
+  }
+  .add-photo {
+    width: 96px; height: 96px; flex-shrink: 0; border: 2px dashed #d6d3d1;
+    border-radius: 10px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; background: white; cursor: pointer; color: #78716c;
+    font-size: 11px; gap: 4px;
+  }
 
+  /* === VENDOR DETAIL === */
   .vendor-card { background: white; padding: 16px; border-bottom: 1px solid #e7e5e4; }
-  .vendor-card .card-photo { width: 100%; max-height: 200px; object-fit: contain; background: #f5f5f4; border-radius: 8px; margin-bottom: 12px; }
-  .info-row { display: flex; gap: 8px; padding: 4px 0; font-size: 14px; }
-  .info-label { color: #78716c; min-width: 80px; }
+  .vendor-card .card-photo {
+    width: 100%; max-height: 200px; object-fit: contain;
+    background: #f5f5f4; border-radius: 8px; margin-bottom: 12px;
+  }
+  .info-row { display: flex; gap: 8px; padding: 5px 0; font-size: 14px; }
+  .info-label { color: #78716c; min-width: 90px; flex-shrink: 0; }
   .info-value { flex: 1; word-break: break-word; }
   .info-value a { color: #b91c1c; text-decoration: underline; }
+  .vendor-rating-display { padding: 8px 0; }
+  .vendor-rating-display .stars-big { color: #f59e0b; font-size: 18px; letter-spacing: 2px; }
+  .vendor-rating-display .stars-big .empty { color: #d6d3d1; }
 
-  .notes-box { background: #fef3c7; border: 1px solid #fde68a; padding: 10px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; margin-top: 12px; }
+  .notes-box {
+    background: #fef3c7; border: 1px solid #fde68a; padding: 12px;
+    border-radius: 8px; font-size: 14px; white-space: pre-wrap; margin-top: 12px;
+    line-height: 1.5;
+  }
 
+  /* === PRODUCTS === */
   .product-list { padding: 12px 16px; }
-  .product-card { background: white; border: 1px solid #e7e5e4; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
-  .product-photos { display: flex; overflow-x: auto; background: #f5f5f4; }
+  .product-card {
+    background: white; border: 1px solid #e7e5e4; border-radius: 10px;
+    overflow: hidden; margin-bottom: 12px;
+  }
+  .product-photos { display: flex; overflow-x: auto; background: #f5f5f4; -webkit-overflow-scrolling: touch; }
   .product-photos img { height: 120px; width: 120px; object-fit: cover; flex-shrink: 0; border-right: 1px solid white; }
+  .product-photos .label-tag {
+    position: absolute; bottom: 4px; left: 4px;
+    background: rgba(0,0,0,0.7); color: white; font-size: 10px;
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .product-photo-wrap { position: relative; flex-shrink: 0; }
   .product-body { padding: 12px; }
   .product-header { display: flex; justify-content: space-between; gap: 8px; }
-  .product-name { font-weight: 600; flex: 1; }
+  .product-name { font-weight: 600; flex: 1; font-size: 15px; }
   .product-cat { font-size: 11px; color: #78716c; margin-top: 2px; }
-  .product-actions { display: flex; gap: 4px; }
-  .product-actions button { background: transparent; border: none; padding: 4px 8px; cursor: pointer; color: #78716c; font-size: 14px; }
-  .product-actions button:active { background: #f5f5f4; border-radius: 4px; }
+  .product-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .product-actions button {
+    background: transparent; border: none; padding: 6px 10px; cursor: pointer;
+    color: #78716c; font-size: 14px; border-radius: 6px;
+  }
+  .product-actions button:active { background: #f5f5f4; }
   .fabric-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-  .fabric-tag { background: #fee2e2; color: #991b1b; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .fabric-tag { background: #fee2e2; color: #991b1b; font-size: 11px; padding: 3px 8px; border-radius: 10px; }
   .product-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-top: 8px; font-size: 12px; }
   .spec-label { color: #78716c; }
-  .product-notes { font-size: 12px; background: #f5f5f4; padding: 8px; border-radius: 6px; margin-top: 8px; white-space: pre-wrap; }
+  .product-notes {
+    font-size: 13px; background: #f5f5f4; padding: 10px; border-radius: 6px;
+    margin-top: 8px; white-space: pre-wrap; line-height: 1.4;
+  }
 
-  .section-header { padding: 12px 16px 8px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 60px; background: #f5f5f4; z-index: 10; }
-  .section-header h2 { margin: 0; font-size: 15px; color: #44403c; }
+  .section-header {
+    padding: 14px 16px 8px; display: flex; justify-content: space-between;
+    align-items: center; background: #f5f5f4;
+  }
+  .section-header h2 { margin: 0; font-size: 15px; color: #44403c; font-weight: 600; }
 
   audio { width: 100%; height: 40px; }
 
-  .video-preview { background: black; border-radius: 8px; overflow: hidden; position: relative; margin-top: 8px; }
-  .video-preview video { width: 100%; max-height: 240px; object-fit: cover; display: block; }
-  .scan-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid #ef4444; border-radius: 8px; width: 75%; height: 60px; pointer-events: none; }
-
-  .recording-indicator { display: flex; align-items: center; gap: 6px; color: #b91c1c; font-family: monospace; font-weight: 600; }
+  .recording-indicator {
+    display: flex; align-items: center; gap: 6px;
+    color: #b91c1c; font-family: monospace; font-weight: 600;
+  }
   .recording-dot { width: 8px; height: 8px; border-radius: 50%; background: #b91c1c; animation: pulse 1.5s infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-  .alert { background: #fef3c7; border: 1px solid #fde68a; color: #78350f; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; }
+  .alert {
+    background: #fef3c7; border: 1px solid #fde68a; color: #78350f;
+    padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px;
+    line-height: 1.4;
+  }
   .alert-info { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
   .alert-error { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
 
-  .install-banner { background: #1e40af; color: white; padding: 10px 16px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .install-banner button { background: white; color: #1e40af; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px; }
-  .install-banner .close-btn { background: transparent; color: white; padding: 4px 8px; }
+  /* Modal for custom input */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal { background: white; border-radius: 14px; padding: 20px; width: 100%; max-width: 360px; }
+  .modal h3 { margin: 0 0 12px 0; font-size: 17px; }
+  .modal input {
+    width: 100%; padding: 12px; border: 1px solid #d6d3d1; border-radius: 8px;
+    font-size: 16px; margin-bottom: 16px; outline: none;
+  }
+  .modal input:focus { border-color: #b91c1c; }
 </style>
 </head>
 <body>
@@ -128,13 +302,50 @@
 <div id="app"></div>
 
 <script>
+// =================== CONSTANTS ===================
+const DEFAULT_VENDOR_CATEGORIES = ['Fabrics', 'Garments', 'Accessories'];
+
+// Universal product categories (not Pakistan-specific)
+const DEFAULT_PRODUCT_CATEGORIES = [
+  // Fabrics
+  'Cotton Fabric', 'Linen Fabric', 'Silk Fabric', 'Polyester Fabric', 'Viscose/Rayon Fabric',
+  'Blended Fabric', 'Denim Fabric', 'Knit Fabric', 'Lace Fabric', 'Lining Fabric',
+  'Functional/Technical Fabric',
+  // Garments
+  'Tops/Shirts', 'Bottoms/Trousers', 'Dresses', 'Outerwear/Jackets', 'Activewear',
+  'Sleepwear/Loungewear', 'Underwear/Lingerie', 'Kidswear', 'Suits',
+  // Accessories
+  'Buttons', 'Zippers', 'Labels & Tags', 'Threads & Yarns', 'Trims & Ribbons',
+  'Hangtags', 'Packaging', 'Embellishments',
+  // Other
+  'Other'
+];
+
+const DEFAULT_FABRIC_TYPES = [
+  'Woven', 'Knit', 'Ecru / Greige', 'Dyed', 'Printed', 'Embroidered',
+  'Yarn-dyed', 'Lace', 'Denim', 'Lawn', 'Cambric', 'Chiffon', 'Silk', 'Linen'
+];
+
+const RATING_LABELS = {
+  0: '',
+  1: '★ Unlikely',
+  2: '★★ Possibly',
+  3: '★★★ Maybe',
+  4: '★★★★ Likely',
+  5: '★★★★★ Very Likely'
+};
+
 // =================== STATE ===================
 let state = {
-  view: 'vendors', // vendors, vendor-detail, add-vendor, edit-vendor, add-product, edit-product, settings
+  view: 'vendors',
   vendors: [],
   selectedVendorId: null,
   editingProductId: null,
   search: '',
+  filterCategory: 'all', // 'all', 'Fabrics', 'Garments', 'Accessories', or custom
+  customVendorCategories: [],
+  customProductCategories: [],
+  customFabricTypes: [],
   profile: {
     name: '',
     company: 'BATIK',
@@ -144,33 +355,36 @@ let state = {
     website: '',
     intro: 'BATIK is a Pakistan-based company specializing in quality fabrics and garments, serving both the traditional Pakistani clothing market and Western garment industry. We work with woven, ecru, dyed, printed, and embroidered fabrics.'
   },
-  // form state
   vendorForm: null,
   productForm: null,
-  showInstallBanner: true,
+  modal: null,
 };
-
-const FABRIC_TYPES = ['Woven', 'Knit', 'Ecru / Greige', 'Dyed', 'Printed', 'Embroidered', 'Yarn-dyed', 'Lace', 'Denim', 'Lawn', 'Cambric', 'Chiffon', 'Silk', 'Linen'];
-const CATEGORIES = ['Pakistani Unstitched (3-pc)', 'Pakistani Lawn', 'Pakistani Embroidered Suit', 'Western Garment Fabric', 'Western Garment (Finished)', 'Lining', 'Trims & Accessories', 'Yarn', 'Other'];
 
 // =================== STORAGE ===================
 function saveState() {
   try {
-    localStorage.setItem('cantonFair_vendors', JSON.stringify(state.vendors));
-    localStorage.setItem('cantonFair_profile', JSON.stringify(state.profile));
+    localStorage.setItem('cf_vendors', JSON.stringify(state.vendors));
+    localStorage.setItem('cf_profile', JSON.stringify(state.profile));
+    localStorage.setItem('cf_customVendorCats', JSON.stringify(state.customVendorCategories));
+    localStorage.setItem('cf_customProductCats', JSON.stringify(state.customProductCategories));
+    localStorage.setItem('cf_customFabricTypes', JSON.stringify(state.customFabricTypes));
   } catch (e) {
-    alert('Storage full! Please export your data and remove some photos.');
+    alert('Storage full! Please export your data and consider removing some photos.');
   }
 }
 
 function loadState() {
   try {
-    const v = localStorage.getItem('cantonFair_vendors');
+    const v = localStorage.getItem('cf_vendors');
     if (v) state.vendors = JSON.parse(v);
-    const p = localStorage.getItem('cantonFair_profile');
+    const p = localStorage.getItem('cf_profile');
     if (p) state.profile = { ...state.profile, ...JSON.parse(p) };
-    const installDismissed = localStorage.getItem('cantonFair_installDismissed');
-    if (installDismissed) state.showInstallBanner = false;
+    const vc = localStorage.getItem('cf_customVendorCats');
+    if (vc) state.customVendorCategories = JSON.parse(vc);
+    const pc = localStorage.getItem('cf_customProductCats');
+    if (pc) state.customProductCategories = JSON.parse(pc);
+    const ft = localStorage.getItem('cf_customFabricTypes');
+    if (ft) state.customFabricTypes = JSON.parse(ft);
   } catch (e) { console.error(e); }
 }
 
@@ -179,10 +393,7 @@ function escapeHtml(s) {
   if (s == null) return '';
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
-
-function escapeAttr(s) {
-  return escapeHtml(s);
-}
+const escapeAttr = escapeHtml;
 
 function compressImage(file, maxDim = 1200, quality = 0.7) {
   return new Promise((resolve, reject) => {
@@ -209,54 +420,77 @@ function compressImage(file, maxDim = 1200, quality = 0.7) {
   });
 }
 
-// =================== ROUTING / RENDER ===================
-function render() {
-  const app = document.getElementById('app');
-  app.innerHTML = renderHeader() + renderInstallBanner() + renderView();
-  attachEventListeners();
+function getAllVendorCategories() {
+  return [...DEFAULT_VENDOR_CATEGORIES, ...state.customVendorCategories];
+}
+function getAllProductCategories() {
+  // Custom ones inserted before "Other"
+  const defaults = DEFAULT_PRODUCT_CATEGORIES.filter(c => c !== 'Other');
+  return [...defaults, ...state.customProductCategories, 'Other'];
+}
+function getAllFabricTypes() {
+  return [...DEFAULT_FABRIC_TYPES, ...state.customFabricTypes];
 }
 
-function renderInstallBanner() {
-  if (!state.showInstallBanner || state.view !== 'vendors') return '';
-  const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isMac = /Mac/.test(navigator.userAgent) && !isiOS;
-  let msg = '';
-  if (isiOS) msg = '📱 To use offline at the fair: tap Share → "Add to Home Screen"';
-  else if (isMac) msg = '💡 Bookmark this page and open it on your phone too — same data won\'t sync, choose one device.';
-  else msg = '📱 Tap browser menu → "Install app" or "Add to Home Screen" for offline use';
-  return `<div class="install-banner">
-    <span>${msg}</span>
-    <button class="close-btn" data-action="dismiss-install">✕</button>
-  </div>`;
+function renderStars(rating, interactive = false, size = 'normal') {
+  let html = '<div class="' + (size === 'big' ? 'stars-big' : '') + '">';
+  for (let i = 1; i <= 5; i++) {
+    const filled = i <= (rating || 0);
+    if (interactive) {
+      html += `<span class="star ${filled ? 'active' : ''}" data-action="set-rating" data-value="${i}">★</span>`;
+    } else {
+      html += `<span class="${filled ? '' : 'empty'}">★</span>`;
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+// =================== RENDER ===================
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = renderHeader() + renderView();
+  if (state.modal) app.innerHTML += renderModal();
+  attachEventListeners();
 }
 
 function renderHeader() {
   const productCount = state.vendors.reduce((s, v) => s + (v.products?.length || 0), 0);
   const selectedVendor = state.vendors.find(v => v.id === state.selectedVendorId);
 
-  let title = 'Canton Fair Tracker';
-  let subtitle = `${state.vendors.length} vendors · ${productCount} products`;
+  let title, subtitle, isMain = false;
   let showBack = state.view !== 'vendors';
   let showActions = state.view === 'vendors';
 
-  if (state.view === 'vendor-detail' && selectedVendor) {
-    title = selectedVendor.company || 'Vendor';
+  if (state.view === 'vendors') {
+    isMain = true;
+    title = `<span class="batik-logo-large">BATIK</span><span style="font-size:14px; opacity:0.85; font-weight:400;"> · Canton Fair Tracker</span>`;
+    subtitle = `${state.vendors.length} vendors · ${productCount} products`;
+  } else if (state.view === 'vendor-detail' && selectedVendor) {
+    title = escapeHtml(selectedVendor.company || 'Vendor');
     subtitle = `Booth ${selectedVendor.booth || '—'} · ${selectedVendor.products?.length || 0} products`;
-  } else if (state.view === 'add-vendor') title = 'New Vendor';
-  else if (state.view === 'edit-vendor') title = 'Edit Vendor';
-  else if (state.view === 'add-product') title = 'New Product';
-  else if (state.view === 'edit-product') title = 'Edit Product';
-  else if (state.view === 'settings') { title = 'My Profile'; subtitle = 'Used in vendor emails'; }
+  } else {
+    const titles = {
+      'add-vendor': ['New Vendor', '<span class="batik-logo">BATIK</span> · Canton Fair'],
+      'edit-vendor': ['Edit Vendor', '<span class="batik-logo">BATIK</span> · Canton Fair'],
+      'add-product': ['New Product', '<span class="batik-logo">BATIK</span> · Canton Fair'],
+      'edit-product': ['Edit Product', '<span class="batik-logo">BATIK</span> · Canton Fair'],
+      'settings': ['My Profile', 'Used in vendor emails']
+    };
+    [title, subtitle] = titles[state.view] || ['', ''];
+    title = escapeHtml(title);
+  }
 
   return `<div class="header">
-    ${showBack ? '<button class="icon-btn" data-action="back">←</button>' : ''}
-    <div style="flex:1; min-width:0;">
-      <h1>${escapeHtml(title)}</h1>
-      <div class="subtitle">${escapeHtml(subtitle)}</div>
+    ${showBack ? '<button data-action="back" aria-label="Back">←</button>' : ''}
+    <div class="header-title">
+      <h1>${title}</h1>
+      <div class="subtitle">${subtitle}</div>
     </div>
     ${showActions ? `
-      <button class="icon-btn" data-action="export" title="Export">⬇</button>
-      <button class="icon-btn" data-action="settings" title="Profile">⚙</button>
+      <button data-action="export" title="Export backup">⬇</button>
+      <button data-action="import" title="Import backup">⬆</button>
+      <button data-action="settings" title="Profile">⚙</button>
     ` : ''}
   </div>`;
 }
@@ -277,41 +511,66 @@ function renderView() {
 function renderVendorList() {
   const q = state.search.toLowerCase();
   const filtered = state.vendors.filter(v => {
+    // Category filter
+    if (state.filterCategory !== 'all' && (v.vendorCategory || '') !== state.filterCategory) return false;
+    // Search filter (search in company, booth, contact, designation, notes, and products)
     if (!q) return true;
-    return (v.company || '').toLowerCase().includes(q)
-      || (v.booth || '').toLowerCase().includes(q)
-      || (v.contact || '').toLowerCase().includes(q);
+    const haystack = [
+      v.company, v.booth, v.contact, v.designation, v.notes, v.vendorCategory,
+      ...(v.products || []).flatMap(p => [p.name, p.category, ...(p.fabricTypes || []), p.notes])
+    ].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(q);
   });
 
-  let html = `<div class="search-bar">
-    <input type="text" id="search-input" placeholder="Search company, booth, contact…" value="${escapeAttr(state.search)}">
+  // Build filter row
+  const cats = ['all', ...DEFAULT_VENDOR_CATEGORIES, ...state.customVendorCategories];
+  let filterChips = cats.map(c => {
+    const label = c === 'all' ? 'All' : c;
+    const active = state.filterCategory === c ? 'active' : '';
+    return `<div class="filter-chip ${active}" data-action="filter-cat" data-value="${escapeAttr(c)}">${escapeHtml(label)}</div>`;
+  }).join('');
+
+  let html = `<div class="search-section">
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="Search company, booth, product, notes…" value="${escapeAttr(state.search)}">
+    </div>
+    <div class="filter-row">${filterChips}</div>
   </div>`;
 
   if (filtered.length === 0) {
     html += `<div class="empty">
-      <div class="empty-icon">${state.search ? '🔍' : '🏢'}</div>
-      <div style="font-weight:600; margin-bottom:4px;">${state.search ? 'No matches' : 'No vendors yet'}</div>
-      <div style="font-size:14px;">${state.search ? 'Try a different search' : 'Tap the + button to add your first vendor'}</div>
+      <div class="empty-icon">${(state.search || state.filterCategory !== 'all') ? '🔍' : '🏢'}</div>
+      <div style="font-weight:600; margin-bottom:4px;">${(state.search || state.filterCategory !== 'all') ? 'No matches' : 'No vendors yet'}</div>
+      <div style="font-size:14px;">${(state.search || state.filterCategory !== 'all') ? 'Try different filters' : 'Tap + to add your first vendor'}</div>
     </div>`;
   } else {
     html += '<div class="vendor-list">';
     filtered.forEach(v => {
       const initial = (v.company || '?').trim().charAt(0).toUpperCase();
+      const stars = v.rating > 0 ? `<div class="vendor-stars">${'★'.repeat(v.rating)}<span class="empty">${'★'.repeat(5 - v.rating)}</span></div>` : '';
+      const cat = v.vendorCategory ? `<span style="color:#b91c1c; font-weight:500;">${escapeHtml(v.vendorCategory)}</span>` : '';
+      const meta = [
+        v.booth ? 'Booth ' + escapeHtml(v.booth) : '',
+        escapeHtml(v.contact || ''),
+        cat
+      ].filter(Boolean).join(' · ');
       html += `<div class="vendor-item" data-action="open-vendor" data-id="${v.id}">
         <div class="vendor-avatar">
           ${v.cardPhoto ? `<img src="${v.cardPhoto}" alt="">` : escapeHtml(initial)}
         </div>
         <div class="vendor-info">
           <div class="vendor-name">${escapeHtml(v.company || 'Unnamed vendor')}</div>
-          <div class="vendor-meta">${v.booth ? 'Booth ' + escapeHtml(v.booth) : ''}${v.booth && v.contact ? ' · ' : ''}${escapeHtml(v.contact || '')}</div>
+          <div class="vendor-meta">${meta}</div>
+          ${stars}
         </div>
-        <div class="vendor-badge">${v.products?.length || 0} ${(v.products?.length === 1) ? 'item' : 'items'}</div>
+        <div class="vendor-badge">${v.products?.length || 0}</div>
       </div>`;
     });
     html += '</div>';
   }
 
-  html += `<button class="fab" data-action="add-vendor">+</button>`;
+  html += `<button class="fab" data-action="add-vendor" aria-label="Add vendor">+</button>`;
   return html;
 }
 
@@ -322,11 +581,23 @@ function renderVendorDetail() {
   let html = `<div class="vendor-card">`;
   if (v.cardPhoto) html += `<img src="${v.cardPhoto}" class="card-photo" alt="Business card">`;
 
+  if (v.rating > 0) {
+    html += `<div class="vendor-rating-display">
+      <div style="font-size:12px; color:#78716c; margin-bottom:4px;">My Rating (private)</div>
+      ${renderStars(v.rating, false, 'big')}
+      <div style="font-size:13px; color:#44403c; margin-top:4px;">${RATING_LABELS[v.rating]}</div>
+    </div>`;
+  }
+
+  const phoneDisplay = v.phone ? (v.phone.startsWith('+') ? v.phone : '+86 ' + v.phone) : '';
+
   const fields = [
     ['Contact', v.contact],
+    ['Designation', v.designation],
+    ['Category', v.vendorCategory],
     ['Booth', v.booth],
     ['Email', v.email ? `<a href="mailto:${escapeAttr(v.email)}">${escapeHtml(v.email)}</a>` : null],
-    ['Phone', v.phone ? `<a href="tel:${escapeAttr(v.phone)}">${escapeHtml(v.phone)}</a>` : null],
+    ['Phone', phoneDisplay ? `<a href="tel:${escapeAttr(phoneDisplay)}">${escapeHtml(phoneDisplay)}</a>` : null],
     ['WeChat/WA', v.wechat],
     ['Website', v.website],
     ['Address', v.address],
@@ -340,14 +611,13 @@ function renderVendorDetail() {
 
   html += `<div class="btn-row" style="margin-top:16px;">
     <button class="btn btn-primary" data-action="email-vendor" data-id="${v.id}">✉ Email Vendor</button>
-    <button class="btn btn-secondary" data-action="edit-vendor" data-id="${v.id}" style="flex:0 0 auto;">✎</button>
-    <button class="btn btn-danger" data-action="delete-vendor" data-id="${v.id}" style="flex:0 0 auto;">🗑</button>
+    <button class="btn btn-secondary" data-action="edit-vendor" data-id="${v.id}" style="flex:0 0 56px;">✎</button>
+    <button class="btn btn-danger" data-action="delete-vendor" data-id="${v.id}" style="flex:0 0 56px;">🗑</button>
   </div></div>`;
 
-  // Products
   html += `<div class="section-header">
     <h2>Products (${v.products?.length || 0})</h2>
-    <button class="btn btn-primary" data-action="add-product" style="padding:6px 12px; font-size:13px;">+ Product</button>
+    <button class="btn btn-primary" data-action="add-product" style="padding:8px 14px; font-size:13px; min-height:36px;">+ Product</button>
   </div>`;
 
   if (!v.products || v.products.length === 0) {
@@ -357,9 +627,7 @@ function renderVendorDetail() {
     </div>`;
   } else {
     html += '<div class="product-list">';
-    v.products.forEach(p => {
-      html += renderProductCard(p);
-    });
+    v.products.forEach(p => { html += renderProductCard(p); });
     html += '</div>';
   }
   return html;
@@ -367,9 +635,18 @@ function renderVendorDetail() {
 
 function renderProductCard(p) {
   let html = `<div class="product-card">`;
-  if (p.photos && p.photos.length > 0) {
+  const allPhotos = [...(p.photos || [])];
+  if (p.codePhoto) allPhotos.push({ src: p.codePhoto, isCode: true });
+
+  if (allPhotos.length > 0) {
     html += `<div class="product-photos">`;
-    p.photos.forEach(ph => html += `<img src="${ph}" alt="">`);
+    allPhotos.forEach(ph => {
+      if (typeof ph === 'string') {
+        html += `<div class="product-photo-wrap"><img src="${ph}" alt=""></div>`;
+      } else if (ph.isCode) {
+        html += `<div class="product-photo-wrap"><img src="${ph.src}" alt=""><span class="label-tag">Code</span></div>`;
+      }
+    });
     html += `</div>`;
   }
   html += `<div class="product-body">
@@ -393,8 +670,7 @@ function renderProductCard(p) {
   const specs = [
     ['Comp', p.composition], ['GSM', p.gsm], ['Width', p.width],
     ['Price', p.price], ['MOQ', p.moq], ['Lead', p.leadTime],
-    ['Sample', p.sample], ['Origin', p.origin], ['Cert', p.certifications],
-    ['Code', p.barcode]
+    ['Sample', p.sample], ['Finish', p.dyeingMethod], ['Code', p.barcode]
   ].filter(([_, v]) => v);
 
   if (specs.length > 0) {
@@ -412,17 +688,25 @@ function renderProductCard(p) {
 
 function renderVendorForm() {
   const f = state.vendorForm;
+  const allCats = getAllVendorCategories();
+
+  let categoryChips = allCats.map(c => {
+    const active = f.vendorCategory === c ? 'active' : '';
+    return `<div class="chip ${active}" data-action="set-vendor-cat" data-value="${escapeAttr(c)}">${escapeHtml(c)}</div>`;
+  }).join('');
+  categoryChips += `<div class="chip add-custom" data-action="add-vendor-cat">+ Add new</div>`;
+
   return `<div class="form">
     <div class="section">
       <div class="section-title">Business Card</div>
-      <div class="section-body" id="card-photo-section">
+      <div class="section-body">
         ${f.cardPhoto ? `
           <div style="position:relative;">
             <img src="${f.cardPhoto}" style="width:100%; max-height:200px; object-fit:contain; background:#f5f5f4; border-radius:8px;">
-            <button class="btn btn-danger" data-action="remove-card-photo" style="position:absolute; top:8px; right:8px; padding:6px 10px;">✕</button>
+            <button class="btn btn-danger" data-action="remove-card-photo" style="position:absolute; top:8px; right:8px; padding:6px 10px; min-height:auto;">✕</button>
           </div>
         ` : `
-          <label class="photo-capture">
+          <label class="photo-capture-large">
             <div style="font-size:32px;">💳</div>
             <div style="font-weight:600; margin-top:8px;">Snap business card</div>
             <div style="font-size:12px;">Opens camera on phone</div>
@@ -433,13 +717,35 @@ function renderVendorForm() {
     </div>
 
     <div class="section">
+      <div class="section-title">Vendor Category</div>
+      <div class="section-body">
+        <div class="chips">${categoryChips}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">My Rating <span style="text-transform:none; font-weight:400; color:#a8a29e;">(private — never sent to vendor)</span></div>
+      <div class="section-body">
+        <div class="star-rating">${renderStars(f.rating || 0, true)}</div>
+        <div class="rating-label">${RATING_LABELS[f.rating || 0]}</div>
+      </div>
+    </div>
+
+    <div class="section">
       <div class="section-title">Vendor Info</div>
       <div class="section-body">
         ${field('company', 'Company Name *', f.company, 'e.g. Guangzhou Textile Co.')}
         ${field('booth', 'Booth Number', f.booth, 'e.g. 12.1 A45')}
         ${field('contact', 'Contact Person', f.contact, 'e.g. Mr. Wang')}
+        ${field('designation', 'Designation / Title', f.designation, 'e.g. Sales Manager, Owner')}
         ${field('email', 'Email', f.email, 'contact@example.com', 'email')}
-        ${field('phone', 'Phone', f.phone, '+86 ...', 'tel')}
+        <div class="field">
+          <label>Phone</label>
+          <div class="phone-input">
+            <span class="phone-prefix">+86</span>
+            <input type="tel" data-field="phone" value="${escapeAttr(f.phone || '')}" placeholder="138 1234 5678">
+          </div>
+        </div>
         ${field('wechat', 'WeChat / WhatsApp', f.wechat)}
         ${field('website', 'Website', f.website)}
         ${field('address', 'Address', f.address)}
@@ -449,14 +755,14 @@ function renderVendorForm() {
     <div class="section">
       <div class="section-title">Notes</div>
       <div class="section-body">
-        <textarea data-field="notes" rows="4" placeholder="Tip: tap mic icon on phone keyboard for voice typing">${escapeHtml(f.notes || '')}</textarea>
+        <textarea data-field="notes" rows="8" placeholder="Anything to remember about this vendor… (tap mic on phone keyboard for voice typing)">${escapeHtml(f.notes || '')}</textarea>
       </div>
     </div>
 
     <div class="section">
       <div class="section-title">Voice Note</div>
       <div class="section-body" id="voice-note-section">
-        ${renderVoiceRecorder(f.voiceNote, 'vendor')}
+        ${renderVoiceRecorder(f.voiceNote)}
       </div>
     </div>
 
@@ -469,9 +775,12 @@ function renderVendorForm() {
 
 function renderProductForm() {
   const f = state.productForm;
+  const allCats = getAllProductCategories();
+  const allFabrics = getAllFabricTypes();
+
   let html = `<div class="form">
     <div class="section">
-      <div class="section-title">Photos</div>
+      <div class="section-title">Product Photos</div>
       <div class="section-body">
         <div class="photo-grid">`;
   (f.photos || []).forEach((ph, i) => {
@@ -482,11 +791,11 @@ function renderProductForm() {
   });
   html += `<label class="add-photo">
     <div style="font-size:24px;">📷</div>
-    <div>Add photo</div>
+    <div>Add</div>
     <input type="file" accept="image/*" capture="environment" data-action="add-photo" style="display:none;">
   </label>
         </div>
-        <div style="font-size:11px; color:#78716c; margin-top:6px;">Tip: take multiple shots — product, label, swatch</div>
+        <div style="font-size:11px; color:#78716c; margin-top:6px;">Tip: snap product, label, swatch separately</div>
       </div>
     </div>
 
@@ -494,7 +803,7 @@ function renderProductForm() {
       <div class="section-title">Basic Info</div>
       <div class="section-body">
         ${field('name', 'Product Name *', f.name, 'e.g. Embroidered cotton lawn')}
-        ${selectField('category', 'Category', f.category, CATEGORIES)}
+        ${categorySelectField('category', 'Category', f.category, allCats)}
       </div>
     </div>
 
@@ -502,10 +811,11 @@ function renderProductForm() {
       <div class="section-title">Fabric Type (tap all that apply)</div>
       <div class="section-body">
         <div class="chips">`;
-  FABRIC_TYPES.forEach(t => {
+  allFabrics.forEach(t => {
     const active = (f.fabricTypes || []).includes(t);
     html += `<div class="chip ${active ? 'active' : ''}" data-action="toggle-fabric" data-value="${escapeAttr(t)}">${escapeHtml(t)}</div>`;
   });
+  html += `<div class="chip add-custom" data-action="add-fabric-type">+ Add custom</div>`;
   html += `</div>
       </div>
     </div>
@@ -519,8 +829,6 @@ function renderProductForm() {
           ${field('width', 'Width', f.width, 'e.g. 58&quot;')}
         </div>
         ${field('dyeingMethod', 'Dyeing / Finish', f.dyeingMethod, 'e.g. reactive dye, pigment print')}
-        ${field('origin', 'Origin', f.origin, 'e.g. Made in China')}
-        ${field('certifications', 'Certifications', f.certifications, 'e.g. OEKO-TEX, GOTS, BCI')}
       </div>
     </div>
 
@@ -537,27 +845,42 @@ function renderProductForm() {
     </div>
 
     <div class="section">
-      <div class="section-title">Barcode / Article Code</div>
+      <div class="section-title">Article Code / Barcode</div>
       <div class="section-body">
-        <div style="display:flex; gap:8px;">
-          <input type="text" data-field="barcode" value="${escapeAttr(f.barcode || '')}" placeholder="Article code or barcode" style="flex:1; padding:10px 12px; border:1px solid #d6d3d1; border-radius:8px; font-size:16px;">
-          <button class="btn btn-primary" data-action="scan-barcode">📷 Scan</button>
+        <div class="field">
+          <label>Type code (optional)</label>
+          <input type="text" data-field="barcode" value="${escapeAttr(f.barcode || '')}" placeholder="Article code or product reference">
         </div>
-        <div id="barcode-scanner-area"></div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Or photograph the code label</label>
+          ${f.codePhoto ? `
+            <div style="position:relative; margin-top:6px;">
+              <img src="${f.codePhoto}" style="width:100%; max-height:180px; object-fit:contain; background:#f5f5f4; border-radius:8px;">
+              <button class="btn btn-danger" data-action="remove-code-photo" style="position:absolute; top:8px; right:8px; padding:6px 10px; min-height:auto;">✕</button>
+            </div>
+          ` : `
+            <label class="photo-capture-large" style="padding:14px; margin-top:6px;">
+              <div style="font-size:24px;">📸</div>
+              <div style="font-weight:600; margin-top:4px; font-size:14px;">Photograph code label</div>
+              <div style="font-size:11px;">Faster than typing</div>
+              <input type="file" accept="image/*" capture="environment" data-action="capture-code" style="display:none;">
+            </label>
+          `}
+        </div>
       </div>
     </div>
 
     <div class="section">
       <div class="section-title">Notes</div>
       <div class="section-body">
-        <textarea data-field="notes" rows="3" placeholder="Quality, comparison, requests…">${escapeHtml(f.notes || '')}</textarea>
+        <textarea data-field="notes" rows="6" placeholder="Quality, comparison vs other vendors, special requests…">${escapeHtml(f.notes || '')}</textarea>
       </div>
     </div>
 
     <div class="section">
       <div class="section-title">Voice Note</div>
       <div class="section-body" id="voice-note-section">
-        ${renderVoiceRecorder(f.voiceNote, 'product')}
+        ${renderVoiceRecorder(f.voiceNote)}
       </div>
     </div>
 
@@ -581,7 +904,7 @@ function renderProfileForm() {
         ${field('title', 'Job Title', p.title, 'e.g. CEO, Sourcing Manager')}
         ${field('company', 'Company', p.company)}
         ${field('email', 'Email *', p.email, '', 'email')}
-        ${field('phone', 'Phone', p.phone, '', 'tel')}
+        ${field('phone', 'Phone (with country code)', p.phone, '+92 ...', 'tel')}
         ${field('website', 'Website', p.website)}
       </div>
     </div>
@@ -589,7 +912,7 @@ function renderProfileForm() {
     <div class="section">
       <div class="section-title">Company Introduction</div>
       <div class="section-body">
-        <textarea data-field="intro" rows="6" placeholder="Brief intro about BATIK that will be included in every email…">${escapeHtml(p.intro || '')}</textarea>
+        <textarea data-field="intro" rows="8" placeholder="Brief intro about BATIK that will be included in every email…">${escapeHtml(p.intro || '')}</textarea>
       </div>
     </div>
 
@@ -604,11 +927,26 @@ function renderVoiceRecorder(audio) {
   if (audio) {
     return `<div style="display:flex; gap:8px; align-items:center;">
       <audio controls src="${audio}" style="flex:1;"></audio>
-      <button class="btn btn-secondary" data-action="delete-voice" style="padding:8px 12px;">🗑</button>
+      <button class="btn btn-secondary" data-action="delete-voice" style="padding:8px 12px; min-height:auto;">🗑</button>
     </div>`;
   }
   return `<button class="btn btn-primary" data-action="record-voice">🎤 Record Voice Note</button>
-    <div id="voice-recording-status" style="margin-top:8px;"></div>`;
+    <div id="voice-recording-status" style="margin-top:8px;"></div>
+    <div style="font-size:11px; color:#78716c; margin-top:6px;">If recording fails on iPhone, use the iPhone Voice Memos app and add audio to notes.</div>`;
+}
+
+function renderModal() {
+  const m = state.modal;
+  return `<div class="modal-overlay" data-action="close-modal">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>${escapeHtml(m.title)}</h3>
+      <input type="text" id="modal-input" placeholder="${escapeAttr(m.placeholder || '')}" value="${escapeAttr(m.defaultValue || '')}" autofocus>
+      <div class="btn-row">
+        <button class="btn btn-secondary" data-action="close-modal">Cancel</button>
+        <button class="btn btn-primary" data-action="modal-confirm">Add</button>
+      </div>
+    </div>
+  </div>`;
 }
 
 function field(name, label, value, placeholder = '', type = 'text') {
@@ -628,6 +966,18 @@ function selectField(name, label, value, options) {
   </div>`;
 }
 
+function categorySelectField(name, label, value, options) {
+  // Same as selectField but with __ADD_NEW__ option at end
+  return `<div class="field">
+    <label>${label}</label>
+    <select data-field="${name}" data-special-category="1">
+      <option value="">— Select —</option>
+      ${options.map(o => `<option value="${escapeAttr(o)}" ${o === value ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
+      <option value="__ADD_NEW__">+ Add new category…</option>
+    </select>
+  </div>`;
+}
+
 // =================== EVENT HANDLERS ===================
 function attachEventListeners() {
   // Search input
@@ -635,52 +985,48 @@ function attachEventListeners() {
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       state.search = e.target.value;
-      // Re-render only the list, not the input (would lose focus)
-      const listContainer = document.querySelector('.vendor-list');
-      const empty = document.querySelector('.empty');
-      // simple approach: just re-render list section
-      const q = state.search.toLowerCase();
-      const filtered = state.vendors.filter(v => !q || (v.company || '').toLowerCase().includes(q) || (v.booth || '').toLowerCase().includes(q) || (v.contact || '').toLowerCase().includes(q));
-      const oldList = listContainer || empty;
-      if (oldList) {
-        let newHtml;
-        if (filtered.length === 0) {
-          newHtml = `<div class="empty">
-            <div class="empty-icon">${state.search ? '🔍' : '🏢'}</div>
-            <div style="font-weight:600; margin-bottom:4px;">${state.search ? 'No matches' : 'No vendors yet'}</div>
-            <div style="font-size:14px;">${state.search ? 'Try a different search' : 'Tap the + button to add your first vendor'}</div>
-          </div>`;
-        } else {
-          newHtml = '<div class="vendor-list">';
-          filtered.forEach(v => {
-            const initial = (v.company || '?').trim().charAt(0).toUpperCase();
-            newHtml += `<div class="vendor-item" data-action="open-vendor" data-id="${v.id}">
-              <div class="vendor-avatar">${v.cardPhoto ? `<img src="${v.cardPhoto}" alt="">` : escapeHtml(initial)}</div>
-              <div class="vendor-info">
-                <div class="vendor-name">${escapeHtml(v.company || 'Unnamed vendor')}</div>
-                <div class="vendor-meta">${v.booth ? 'Booth ' + escapeHtml(v.booth) : ''}${v.booth && v.contact ? ' · ' : ''}${escapeHtml(v.contact || '')}</div>
-              </div>
-              <div class="vendor-badge">${v.products?.length || 0} ${(v.products?.length === 1) ? 'item' : 'items'}</div>
-            </div>`;
-          });
-          newHtml += '</div>';
-        }
+      // Re-render only the list portion to avoid losing input focus
+      const listEl = document.querySelector('.vendor-list') || document.querySelector('.empty');
+      if (listEl) {
         const tmp = document.createElement('div');
-        tmp.innerHTML = newHtml;
-        oldList.replaceWith(tmp.firstElementChild);
+        const fullHtml = renderVendorList();
+        tmp.innerHTML = fullHtml;
+        // The search section is the first child, skip it; replace from second child onwards
+        const newSearch = tmp.querySelector('.search-section');
+        const newList = tmp.querySelector('.vendor-list') || tmp.querySelector('.empty');
+        if (newList) listEl.replaceWith(newList);
       }
     });
   }
 
-  // Form fields → update state directly
+  // Form fields → update state
   document.querySelectorAll('[data-field]').forEach(el => {
-    el.addEventListener('input', (e) => {
+    const handler = (e) => {
       const name = el.dataset.field;
-      const val = el.value;
+      let val = el.value;
+
+      // Special handling for category select with "Add new"
+      if (el.dataset.specialCategory === '1' && val === '__ADD_NEW__') {
+        el.value = state.productForm[name] || '';
+        openModal('Add new product category', '', '', (newCat) => {
+          if (newCat) {
+            if (!state.customProductCategories.includes(newCat)) {
+              state.customProductCategories.push(newCat);
+            }
+            state.productForm[name] = newCat;
+            saveState();
+            render();
+          }
+        });
+        return;
+      }
+
       if (state.view === 'add-vendor' || state.view === 'edit-vendor') state.vendorForm[name] = val;
       else if (state.view === 'add-product' || state.view === 'edit-product') state.productForm[name] = val;
       else if (state.view === 'settings') state.profile[name] = val;
-    });
+    };
+    el.addEventListener('input', handler);
+    el.addEventListener('change', handler);
   });
 
   // Action buttons
@@ -689,31 +1035,43 @@ function attachEventListeners() {
     const eventType = (el.tagName === 'INPUT' && el.type === 'file') ? 'change' : 'click';
     el.addEventListener(eventType, (e) => handleAction(action, el, e));
   });
+
+  // Hidden file input for import
+  let importInput = document.getElementById('hidden-import');
+  if (!importInput) {
+    importInput = document.createElement('input');
+    importInput.type = 'file';
+    importInput.accept = 'application/json,.json';
+    importInput.id = 'hidden-import';
+    importInput.style.display = 'none';
+    importInput.addEventListener('change', handleImport);
+    document.body.appendChild(importInput);
+  }
 }
 
 async function handleAction(action, el, evt) {
   switch (action) {
     case 'back': goBack(); break;
     case 'export': exportData(); break;
-    case 'settings': state.view = 'settings'; render(); break;
-    case 'dismiss-install':
-      state.showInstallBanner = false;
-      localStorage.setItem('cantonFair_installDismissed', '1');
-      render();
+    case 'import':
+      document.getElementById('hidden-import').click();
       break;
+    case 'settings': state.view = 'settings'; render(); break;
     case 'open-vendor':
       state.selectedVendorId = el.dataset.id;
       state.view = 'vendor-detail';
       render();
+      window.scrollTo(0, 0);
       break;
     case 'add-vendor':
-      state.vendorForm = { company: '', contact: '', booth: '', email: '', phone: '', wechat: '', website: '', address: '', notes: '', cardPhoto: null, voiceNote: null };
+      state.vendorForm = { company: '', contact: '', designation: '', booth: '', email: '', phone: '', wechat: '', website: '', address: '', vendorCategory: '', rating: 0, notes: '', cardPhoto: null, voiceNote: null };
       state.view = 'add-vendor';
       render();
+      window.scrollTo(0, 0);
       break;
     case 'edit-vendor': {
       const v = state.vendors.find(x => x.id === el.dataset.id);
-      if (v) { state.vendorForm = { ...v }; state.view = 'edit-vendor'; render(); }
+      if (v) { state.vendorForm = { ...v }; state.view = 'edit-vendor'; render(); window.scrollTo(0, 0); }
       break;
     }
     case 'delete-vendor':
@@ -727,34 +1085,37 @@ async function handleAction(action, el, evt) {
       break;
     case 'save-vendor': saveVendor(); break;
     case 'cancel-form':
-      if (state.view === 'add-vendor' || state.view === 'edit-vendor') state.view = state.selectedVendorId ? 'vendor-detail' : 'vendors';
-      else state.view = 'vendor-detail';
+      if (state.view === 'add-vendor' || state.view === 'edit-vendor') {
+        state.view = state.selectedVendorId ? 'vendor-detail' : 'vendors';
+      } else state.view = 'vendor-detail';
       render();
       break;
     case 'capture-card': await handleCardCapture(evt); break;
+    case 'capture-code': await handleCodeCapture(evt); break;
     case 'remove-card-photo':
       state.vendorForm.cardPhoto = null;
       render();
       break;
+    case 'remove-code-photo':
+      state.productForm.codePhoto = null;
+      render();
+      break;
     case 'add-product':
-      state.productForm = { name: '', category: '', fabricTypes: [], composition: '', gsm: '', width: '', moq: '', price: '', leadTime: '', sample: '', certifications: '', barcode: '', dyeingMethod: '', origin: '', photos: [], notes: '', voiceNote: null };
+      state.productForm = { name: '', category: '', fabricTypes: [], composition: '', gsm: '', width: '', moq: '', price: '', leadTime: '', sample: '', barcode: '', codePhoto: null, dyeingMethod: '', photos: [], notes: '', voiceNote: null };
       state.view = 'add-product';
       render();
+      window.scrollTo(0, 0);
       break;
     case 'edit-product': {
       const v = state.vendors.find(x => x.id === state.selectedVendorId);
       const p = v?.products?.find(p => p.id === el.dataset.id);
-      if (p) { state.productForm = JSON.parse(JSON.stringify(p)); state.editingProductId = p.id; state.view = 'edit-product'; render(); }
+      if (p) { state.productForm = JSON.parse(JSON.stringify(p)); state.editingProductId = p.id; state.view = 'edit-product'; render(); window.scrollTo(0, 0); }
       break;
     }
     case 'delete-product':
       if (confirm('Delete this product?')) {
         const v = state.vendors.find(x => x.id === state.selectedVendorId);
-        if (v) {
-          v.products = v.products.filter(p => p.id !== el.dataset.id);
-          saveState();
-          render();
-        }
+        if (v) { v.products = v.products.filter(p => p.id !== el.dataset.id); saveState(); render(); }
       }
       break;
     case 'save-product': saveProduct(); break;
@@ -770,7 +1131,45 @@ async function handleAction(action, el, evt) {
       render();
       break;
     }
-    case 'scan-barcode': toggleBarcodeScanner(); break;
+    case 'add-fabric-type':
+      openModal('Add custom fabric type', 'e.g. Velvet, Crepe…', '', (newFabric) => {
+        if (newFabric) {
+          if (!state.customFabricTypes.includes(newFabric) && !DEFAULT_FABRIC_TYPES.includes(newFabric)) {
+            state.customFabricTypes.push(newFabric);
+          }
+          if (!state.productForm.fabricTypes.includes(newFabric)) {
+            state.productForm.fabricTypes.push(newFabric);
+          }
+          saveState();
+          render();
+        }
+      });
+      break;
+    case 'set-vendor-cat':
+      state.vendorForm.vendorCategory = state.vendorForm.vendorCategory === el.dataset.value ? '' : el.dataset.value;
+      render();
+      break;
+    case 'add-vendor-cat':
+      openModal('Add custom vendor category', 'e.g. Trims, Yarn, Machinery…', '', (newCat) => {
+        if (newCat) {
+          if (!state.customVendorCategories.includes(newCat) && !DEFAULT_VENDOR_CATEGORIES.includes(newCat)) {
+            state.customVendorCategories.push(newCat);
+          }
+          state.vendorForm.vendorCategory = newCat;
+          saveState();
+          render();
+        }
+      });
+      break;
+    case 'set-rating':
+      const newRating = parseInt(el.dataset.value);
+      state.vendorForm.rating = state.vendorForm.rating === newRating ? 0 : newRating;
+      render();
+      break;
+    case 'filter-cat':
+      state.filterCategory = el.dataset.value;
+      render();
+      break;
     case 'record-voice': await startVoiceRecording(); break;
     case 'stop-voice': stopVoiceRecording(); break;
     case 'delete-voice':
@@ -781,11 +1180,32 @@ async function handleAction(action, el, evt) {
     case 'email-vendor': composeEmail(el.dataset.id); break;
     case 'save-profile': saveState(); state.view = 'vendors'; render(); alert('Profile saved!'); break;
     case 'cancel-profile':
-      loadState(); // revert
+      loadState();
       state.view = 'vendors';
       render();
       break;
+    case 'close-modal':
+      state.modal = null;
+      render();
+      break;
+    case 'modal-confirm':
+      const input = document.getElementById('modal-input');
+      const val = input ? input.value.trim() : '';
+      const cb = state.modal?.callback;
+      state.modal = null;
+      if (cb) cb(val);
+      else render();
+      break;
   }
+}
+
+function openModal(title, placeholder, defaultValue, callback) {
+  state.modal = { title, placeholder, defaultValue, callback };
+  render();
+  setTimeout(() => {
+    const input = document.getElementById('modal-input');
+    if (input) input.focus();
+  }, 50);
 }
 
 function goBack() {
@@ -800,8 +1220,16 @@ async function handleCardCapture(evt) {
   const file = evt.target.files[0];
   if (!file) return;
   try {
-    const compressed = await compressImage(file);
-    state.vendorForm.cardPhoto = compressed;
+    state.vendorForm.cardPhoto = await compressImage(file);
+    render();
+  } catch (e) { alert('Could not load image'); }
+}
+
+async function handleCodeCapture(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  try {
+    state.productForm.codePhoto = await compressImage(file);
     render();
   } catch (e) { alert('Could not load image'); }
 }
@@ -830,6 +1258,7 @@ function saveVendor() {
   saveState();
   state.view = 'vendor-detail';
   render();
+  window.scrollTo(0, 0);
 }
 
 function saveProduct() {
@@ -854,15 +1283,34 @@ let mediaRecorder = null;
 let recordingChunks = [];
 let recordingTimer = null;
 let recordingStream = null;
+let recordingMimeType = '';
+
+function getSupportedAudioMime() {
+  if (typeof MediaRecorder === 'undefined') return '';
+  const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
+  for (const t of types) {
+    try { if (MediaRecorder.isTypeSupported(t)) return t; } catch (e) {}
+  }
+  return '';
+}
 
 async function startVoiceRecording() {
+  if (typeof MediaRecorder === 'undefined') {
+    alert('Voice recording is not supported on this browser. Please use the iPhone Voice Memos app and add details to the notes field.');
+    return;
+  }
+
   try {
-    recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(recordingStream);
+    recordingStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true }
+    });
+    recordingMimeType = getSupportedAudioMime();
+    const options = recordingMimeType ? { mimeType: recordingMimeType } : {};
+    mediaRecorder = new MediaRecorder(recordingStream, options);
     recordingChunks = [];
     mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordingChunks.push(e.data); };
     mediaRecorder.onstop = () => {
-      const blob = new Blob(recordingChunks, { type: 'audio/webm' });
+      const blob = new Blob(recordingChunks, { type: recordingMimeType || 'audio/mp4' });
       const reader = new FileReader();
       reader.onload = () => {
         if (state.view.includes('vendor')) state.vendorForm.voiceNote = reader.result;
@@ -870,88 +1318,39 @@ async function startVoiceRecording() {
         render();
       };
       reader.readAsDataURL(blob);
-      recordingStream.getTracks().forEach(t => t.stop());
+      if (recordingStream) recordingStream.getTracks().forEach(t => t.stop());
     };
     mediaRecorder.start();
 
-    // Update UI to show recording
     let elapsed = 0;
     const status = document.getElementById('voice-recording-status');
     const recordBtn = document.querySelector('[data-action="record-voice"]');
     if (recordBtn) recordBtn.style.display = 'none';
     if (status) {
       status.innerHTML = `<div style="display:flex; gap:8px; align-items:center;">
-        <button class="btn btn-secondary" data-action="stop-voice">⏹ Stop</button>
+        <button class="btn btn-secondary" id="stop-rec-btn">⏹ Stop</button>
         <div class="recording-indicator"><div class="recording-dot"></div><span id="rec-timer">0:00</span></div>
       </div>`;
-      status.querySelector('[data-action="stop-voice"]').addEventListener('click', stopVoiceRecording);
+      document.getElementById('stop-rec-btn').addEventListener('click', stopVoiceRecording);
     }
     recordingTimer = setInterval(() => {
       elapsed++;
       const t = document.getElementById('rec-timer');
       if (t) t.textContent = `${Math.floor(elapsed/60)}:${(elapsed%60).toString().padStart(2,'0')}`;
+      if (elapsed >= 180) stopVoiceRecording(); // auto-stop at 3 min
     }, 1000);
   } catch (err) {
-    alert('Could not access microphone. Please allow mic permission and try again.');
+    let msg = 'Could not start voice recording. ';
+    if (err.name === 'NotAllowedError') msg += 'Please allow microphone access in Safari settings.';
+    else if (err.name === 'NotFoundError') msg += 'No microphone found.';
+    else msg += err.message + '\n\nTip: use the iPhone Voice Memos app and add details to the notes field.';
+    alert(msg);
   }
 }
 
 function stopVoiceRecording() {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
   if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
-}
-
-// =================== BARCODE SCANNER ===================
-let scanStream = null;
-let scanRaf = null;
-let scanDetector = null;
-
-async function toggleBarcodeScanner() {
-  const area = document.getElementById('barcode-scanner-area');
-  if (!area) return;
-  if (scanStream) { stopBarcodeScanner(); return; }
-
-  if (!('BarcodeDetector' in window)) {
-    area.innerHTML = `<div class="alert">Barcode scanning is not available on this device. Please type the code manually. (Works best on Android Chrome.)</div>`;
-    return;
-  }
-
-  try {
-    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    area.innerHTML = `<div class="video-preview">
-      <video id="scan-video" playsinline muted></video>
-      <div class="scan-frame"></div>
-    </div>`;
-    const video = document.getElementById('scan-video');
-    video.srcObject = scanStream;
-    await video.play();
-    scanDetector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code', 'data_matrix'] });
-    scanLoop(video);
-  } catch (err) {
-    area.innerHTML = `<div class="alert alert-error">Could not access camera: ${escapeHtml(err.message)}</div>`;
-    scanStream = null;
-  }
-}
-
-async function scanLoop(video) {
-  if (!scanDetector || !scanStream) return;
-  try {
-    const codes = await scanDetector.detect(video);
-    if (codes.length > 0) {
-      state.productForm.barcode = codes[0].rawValue;
-      stopBarcodeScanner();
-      render();
-      return;
-    }
-  } catch (e) {}
-  scanRaf = requestAnimationFrame(() => scanLoop(video));
-}
-
-function stopBarcodeScanner() {
-  if (scanRaf) { cancelAnimationFrame(scanRaf); scanRaf = null; }
-  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
-  const area = document.getElementById('barcode-scanner-area');
-  if (area) area.innerHTML = '';
 }
 
 // =================== EMAIL ===================
@@ -962,8 +1361,9 @@ function composeEmail(vendorId) {
   const productList = v.products && v.products.length > 0
     ? '\n\nProducts we discussed:\n' + v.products.map(x => `• ${x.name}${x.category ? ' (' + x.category + ')' : ''}`).join('\n')
     : '';
+  const greeting = v.contact ? `${v.contact}${v.designation ? ' (' + v.designation + ')' : ''}` : 'Sir/Madam';
   const subject = `Great meeting you at Canton Fair – ${p.company || 'BATIK'}`;
-  const body = `Dear ${v.contact || 'Sir/Madam'},
+  const body = `Dear ${greeting},
 
 It was a pleasure meeting you at the Canton Fair${v.booth ? ` (Booth ${v.booth})` : ''}. Thank you for taking the time to introduce ${v.company || 'your company'} and share details about your products.
 
@@ -987,28 +1387,59 @@ ${p.name || ''}`;
   window.location.href = mailto;
 }
 
-// =================== EXPORT ===================
+// =================== EXPORT / IMPORT ===================
 function exportData() {
-  const data = { profile: state.profile, vendors: state.vendors, exportedAt: new Date().toISOString() };
-
-  // JSON
+  const data = {
+    profile: state.profile,
+    vendors: state.vendors,
+    customVendorCategories: state.customVendorCategories,
+    customProductCategories: state.customProductCategories,
+    customFabricTypes: state.customFabricTypes,
+    exportedAt: new Date().toISOString()
+  };
   const json = JSON.stringify(data, null, 2);
-  downloadFile(`canton-fair-${new Date().toISOString().split('T')[0]}.json`, json, 'application/json');
+  downloadFile(`batik-canton-${new Date().toISOString().split('T')[0]}.json`, json, 'application/json');
 
-  // CSV (without photos)
-  const rows = [['Vendor', 'Booth', 'Contact', 'Email', 'Phone', 'WeChat/WA', 'Website', 'Vendor Notes', 'Product', 'Category', 'Fabric Types', 'Composition', 'GSM', 'Width', 'MOQ', 'FOB Price', 'Lead Time', 'Sample', 'Certifications', 'Origin', 'Dyeing', 'Barcode', 'Product Notes']];
+  const rows = [['Vendor', 'Category', 'Booth', 'Contact', 'Designation', 'Email', 'Phone', 'WeChat/WA', 'Website', 'Rating', 'Vendor Notes',
+    'Product', 'Product Category', 'Fabric Types', 'Composition', 'GSM', 'Width', 'MOQ', 'FOB Price', 'Lead Time', 'Sample', 'Finish', 'Code', 'Product Notes']];
   state.vendors.forEach(v => {
-    const base = [v.company, v.booth, v.contact, v.email, v.phone, v.wechat, v.website, v.notes];
+    const phone = v.phone ? (v.phone.startsWith('+') ? v.phone : '+86 ' + v.phone) : '';
+    const base = [v.company, v.vendorCategory, v.booth, v.contact, v.designation, v.email, phone, v.wechat, v.website, v.rating || '', v.notes];
     if (!v.products || v.products.length === 0) {
-      rows.push([...base, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+      rows.push([...base, '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else {
       v.products.forEach(p => {
-        rows.push([...base, p.name, p.category, (p.fabricTypes || []).join('; '), p.composition, p.gsm, p.width, p.moq, p.price, p.leadTime, p.sample, p.certifications, p.origin, p.dyeingMethod, p.barcode, p.notes]);
+        rows.push([...base, p.name, p.category, (p.fabricTypes || []).join('; '), p.composition, p.gsm, p.width, p.moq, p.price, p.leadTime, p.sample, p.dyeingMethod, p.barcode, p.notes]);
       });
     }
   });
   const csv = rows.map(r => r.map(c => `"${(c == null ? '' : c.toString()).replace(/"/g, '""')}"`).join(',')).join('\n');
-  setTimeout(() => downloadFile(`canton-fair-${new Date().toISOString().split('T')[0]}.csv`, csv, 'text/csv'), 200);
+  setTimeout(() => downloadFile(`batik-canton-${new Date().toISOString().split('T')[0]}.csv`, csv, 'text/csv'), 200);
+}
+
+async function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data.vendors) throw new Error('Invalid backup file');
+    if (!confirm(`Import ${data.vendors.length} vendors? This will REPLACE your current data.`)) {
+      e.target.value = '';
+      return;
+    }
+    state.vendors = data.vendors;
+    if (data.profile) state.profile = { ...state.profile, ...data.profile };
+    if (data.customVendorCategories) state.customVendorCategories = data.customVendorCategories;
+    if (data.customProductCategories) state.customProductCategories = data.customProductCategories;
+    if (data.customFabricTypes) state.customFabricTypes = data.customFabricTypes;
+    saveState();
+    render();
+    alert('Import complete!');
+  } catch (err) {
+    alert('Could not import: ' + err.message);
+  }
+  e.target.value = '';
 }
 
 function downloadFile(name, content, type) {
