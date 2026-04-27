@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#b91c1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Canton Fair Tracker</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: #f5f5f4; color: #1c1917; padding-bottom: 90px; }
+  .header { background: #b91c1c; color: white; padding: 12px 16px; position: sticky; top: 0; z-index: 30; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; }
+  .header h1 { margin: 0; font-size: 18px; flex: 1; }
+  .header .subtitle { font-size: 12px; color: #fecaca; margin-top: 2px; }
+  .header button { background: transparent; border: none; color: white; padding: 6px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .header button:active { background: rgba(255,255,255,0.2); }
+  .icon-btn { width: 36px; height: 36px; }
+
+  .search-bar { background: white; padding: 12px 16px; border-bottom: 1px solid #e7e5e4; position: sticky; top: 60px; z-index: 20; }
+  .search-bar input { width: 100%; padding: 12px 16px 12px 40px; background: #f5f5f4; border: none; border-radius: 8px; font-size: 16px; outline: none; }
+  .search-bar input:focus { background: white; box-shadow: 0 0 0 2px #b91c1c; }
+  .search-bar { position: relative; }
+  .search-bar::before { content: "🔍"; position: absolute; left: 30px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+
+  .vendor-list { background: white; }
+  .vendor-item { display: flex; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid #e7e5e4; cursor: pointer; }
+  .vendor-item:active { background: #f5f5f4; }
+  .vendor-avatar { width: 48px; height: 48px; border-radius: 8px; background: #fee2e2; color: #b91c1c; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; overflow: hidden; }
+  .vendor-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .vendor-info { flex: 1; min-width: 0; }
+  .vendor-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vendor-meta { font-size: 13px; color: #78716c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vendor-badge { background: #f5f5f4; color: #44403c; font-size: 11px; padding: 4px 8px; border-radius: 12px; flex-shrink: 0; }
+
+  .empty { padding: 60px 24px; text-align: center; color: #78716c; }
+  .empty-icon { font-size: 48px; opacity: 0.3; margin-bottom: 12px; }
+
+  .fab { position: fixed; bottom: 24px; right: 24px; width: 64px; height: 64px; border-radius: 50%; background: #b91c1c; color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 28px; cursor: pointer; z-index: 40; }
+  .fab:active { background: #991b1b; }
+
+  .form { padding: 16px; }
+  .section { margin-bottom: 16px; }
+  .section-title { font-size: 11px; font-weight: 600; color: #78716c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; padding-left: 4px; }
+  .section-body { background: white; border-radius: 8px; padding: 12px; border: 1px solid #e7e5e4; }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: #57534e; margin-bottom: 4px; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 10px 12px; border: 1px solid #d6d3d1; border-radius: 8px;
+    font-size: 16px; font-family: inherit; background: white; outline: none;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: #b91c1c; box-shadow: 0 0 0 2px rgba(185,28,28,0.2); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 6px 12px; border-radius: 16px; border: 1px solid #d6d3d1; background: white; font-size: 13px; cursor: pointer; }
+  .chip.active { background: #b91c1c; color: white; border-color: #b91c1c; }
+
+  .btn { padding: 12px 16px; border-radius: 8px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; }
+  .btn-primary { background: #b91c1c; color: white; }
+  .btn-primary:active { background: #991b1b; }
+  .btn-secondary { background: #e7e5e4; color: #292524; }
+  .btn-secondary:active { background: #d6d3d1; }
+  .btn-danger { background: #fee2e2; color: #b91c1c; }
+  .btn-block { width: 100%; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+
+  .photo-capture { border: 2px dashed #d6d3d1; border-radius: 8px; padding: 24px; text-align: center; color: #78716c; cursor: pointer; background: white; }
+  .photo-capture:active { border-color: #b91c1c; color: #b91c1c; }
+  .photo-grid { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .photo-thumb { position: relative; flex-shrink: 0; width: 96px; height: 96px; border-radius: 8px; overflow: hidden; background: #f5f5f4; }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-thumb .remove { position: absolute; top: 2px; right: 2px; background: #b91c1c; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
+  .add-photo { width: 96px; height: 96px; flex-shrink: 0; border: 2px dashed #d6d3d1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; cursor: pointer; color: #78716c; font-size: 11px; }
+
+  .vendor-card { background: white; padding: 16px; border-bottom: 1px solid #e7e5e4; }
+  .vendor-card .card-photo { width: 100%; max-height: 200px; object-fit: contain; background: #f5f5f4; border-radius: 8px; margin-bottom: 12px; }
+  .info-row { display: flex; gap: 8px; padding: 4px 0; font-size: 14px; }
+  .info-label { color: #78716c; min-width: 80px; }
+  .info-value { flex: 1; word-break: break-word; }
+  .info-value a { color: #b91c1c; text-decoration: underline; }
+
+  .notes-box { background: #fef3c7; border: 1px solid #fde68a; padding: 10px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; margin-top: 12px; }
+
+  .product-list { padding: 12px 16px; }
+  .product-card { background: white; border: 1px solid #e7e5e4; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+  .product-photos { display: flex; overflow-x: auto; background: #f5f5f4; }
+  .product-photos img { height: 120px; width: 120px; object-fit: cover; flex-shrink: 0; border-right: 1px solid white; }
+  .product-body { padding: 12px; }
+  .product-header { display: flex; justify-content: space-between; gap: 8px; }
+  .product-name { font-weight: 600; flex: 1; }
+  .product-cat { font-size: 11px; color: #78716c; margin-top: 2px; }
+  .product-actions { display: flex; gap: 4px; }
+  .product-actions button { background: transparent; border: none; padding: 4px 8px; cursor: pointer; color: #78716c; font-size: 14px; }
+  .product-actions button:active { background: #f5f5f4; border-radius: 4px; }
+  .fabric-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .fabric-tag { background: #fee2e2; color: #991b1b; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .product-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-top: 8px; font-size: 12px; }
+  .spec-label { color: #78716c; }
+  .product-notes { font-size: 12px; background: #f5f5f4; padding: 8px; border-radius: 6px; margin-top: 8px; white-space: pre-wrap; }
+
+  .section-header { padding: 12px 16px 8px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 60px; background: #f5f5f4; z-index: 10; }
+  .section-header h2 { margin: 0; font-size: 15px; color: #44403c; }
+
+  audio { width: 100%; height: 40px; }
+
+  .video-preview { background: black; border-radius: 8px; overflow: hidden; position: relative; margin-top: 8px; }
+  .video-preview video { width: 100%; max-height: 240px; object-fit: cover; display: block; }
+  .scan-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid #ef4444; border-radius: 8px; width: 75%; height: 60px; pointer-events: none; }
+
+  .recording-indicator { display: flex; align-items: center; gap: 6px; color: #b91c1c; font-family: monospace; font-weight: 600; }
+  .recording-dot { width: 8px; height: 8px; border-radius: 50%; background: #b91c1c; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .alert { background: #fef3c7; border: 1px solid #fde68a; color: #78350f; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; }
+  .alert-info { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
+  .alert-error { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+
+  .install-banner { background: #1e40af; color: white; padding: 10px 16px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .install-banner button { background: white; color: #1e40af; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px; }
+  .install-banner .close-btn { background: transparent; color: white; padding: 4px 8px; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// =================== STATE ===================
+let state = {
+  view: 'vendors', // vendors, vendor-detail, add-vendor, edit-vendor, add-product, edit-product, settings
+  vendors: [],
+  selectedVendorId: null,
+  editingProductId: null,
+  search: '',
+  profile: {
+    name: '',
+    company: 'BATIK',
+    title: '',
+    email: '',
+    phone: '',
+    website: '',
+    intro: 'BATIK is a Pakistan-based company specializing in quality fabrics and garments, serving both the traditional Pakistani clothing market and Western garment industry. We work with woven, ecru, dyed, printed, and embroidered fabrics.'
+  },
+  // form state
+  vendorForm: null,
+  productForm: null,
+  showInstallBanner: true,
+};
+
+const FABRIC_TYPES = ['Woven', 'Knit', 'Ecru / Greige', 'Dyed', 'Printed', 'Embroidered', 'Yarn-dyed', 'Lace', 'Denim', 'Lawn', 'Cambric', 'Chiffon', 'Silk', 'Linen'];
+const CATEGORIES = ['Pakistani Unstitched (3-pc)', 'Pakistani Lawn', 'Pakistani Embroidered Suit', 'Western Garment Fabric', 'Western Garment (Finished)', 'Lining', 'Trims & Accessories', 'Yarn', 'Other'];
+
+// =================== STORAGE ===================
+function saveState() {
+  try {
+    localStorage.setItem('cantonFair_vendors', JSON.stringify(state.vendors));
+    localStorage.setItem('cantonFair_profile', JSON.stringify(state.profile));
+  } catch (e) {
+    alert('Storage full! Please export your data and remove some photos.');
+  }
+}
+
+function loadState() {
+  try {
+    const v = localStorage.getItem('cantonFair_vendors');
+    if (v) state.vendors = JSON.parse(v);
+    const p = localStorage.getItem('cantonFair_profile');
+    if (p) state.profile = { ...state.profile, ...JSON.parse(p) };
+    const installDismissed = localStorage.getItem('cantonFair_installDismissed');
+    if (installDismissed) state.showInstallBanner = false;
+  } catch (e) { console.error(e); }
+}
+
+// =================== HELPERS ===================
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function escapeAttr(s) {
+  return escapeHtml(s);
+}
+
+function compressImage(file, maxDim = 1200, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = h * maxDim / w; w = maxDim; }
+          else { w = w * maxDim / h; h = maxDim; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// =================== ROUTING / RENDER ===================
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = renderHeader() + renderInstallBanner() + renderView();
+  attachEventListeners();
+}
+
+function renderInstallBanner() {
+  if (!state.showInstallBanner || state.view !== 'vendors') return '';
+  const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isMac = /Mac/.test(navigator.userAgent) && !isiOS;
+  let msg = '';
+  if (isiOS) msg = '📱 To use offline at the fair: tap Share → "Add to Home Screen"';
+  else if (isMac) msg = '💡 Bookmark this page and open it on your phone too — same data won\'t sync, choose one device.';
+  else msg = '📱 Tap browser menu → "Install app" or "Add to Home Screen" for offline use';
+  return `<div class="install-banner">
+    <span>${msg}</span>
+    <button class="close-btn" data-action="dismiss-install">✕</button>
+  </div>`;
+}
+
+function renderHeader() {
+  const productCount = state.vendors.reduce((s, v) => s + (v.products?.length || 0), 0);
+  const selectedVendor = state.vendors.find(v => v.id === state.selectedVendorId);
+
+  let title = 'Canton Fair Tracker';
+  let subtitle = `${state.vendors.length} vendors · ${productCount} products`;
+  let showBack = state.view !== 'vendors';
+  let showActions = state.view === 'vendors';
+
+  if (state.view === 'vendor-detail' && selectedVendor) {
+    title = selectedVendor.company || 'Vendor';
+    subtitle = `Booth ${selectedVendor.booth || '—'} · ${selectedVendor.products?.length || 0} products`;
+  } else if (state.view === 'add-vendor') title = 'New Vendor';
+  else if (state.view === 'edit-vendor') title = 'Edit Vendor';
+  else if (state.view === 'add-product') title = 'New Product';
+  else if (state.view === 'edit-product') title = 'Edit Product';
+  else if (state.view === 'settings') { title = 'My Profile'; subtitle = 'Used in vendor emails'; }
+
+  return `<div class="header">
+    ${showBack ? '<button class="icon-btn" data-action="back">←</button>' : ''}
+    <div style="flex:1; min-width:0;">
+      <h1>${escapeHtml(title)}</h1>
+      <div class="subtitle">${escapeHtml(subtitle)}</div>
+    </div>
+    ${showActions ? `
+      <button class="icon-btn" data-action="export" title="Export">⬇</button>
+      <button class="icon-btn" data-action="settings" title="Profile">⚙</button>
+    ` : ''}
+  </div>`;
+}
+
+function renderView() {
+  switch (state.view) {
+    case 'vendors': return renderVendorList();
+    case 'vendor-detail': return renderVendorDetail();
+    case 'add-vendor':
+    case 'edit-vendor': return renderVendorForm();
+    case 'add-product':
+    case 'edit-product': return renderProductForm();
+    case 'settings': return renderProfileForm();
+    default: return '';
+  }
+}
+
+function renderVendorList() {
+  const q = state.search.toLowerCase();
+  const filtered = state.vendors.filter(v => {
+    if (!q) return true;
+    return (v.company || '').toLowerCase().includes(q)
+      || (v.booth || '').toLowerCase().includes(q)
+      || (v.contact || '').toLowerCase().includes(q);
+  });
+
+  let html = `<div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search company, booth, contact…" value="${escapeAttr(state.search)}">
+  </div>`;
+
+  if (filtered.length === 0) {
+    html += `<div class="empty">
+      <div class="empty-icon">${state.search ? '🔍' : '🏢'}</div>
+      <div style="font-weight:600; margin-bottom:4px;">${state.search ? 'No matches' : 'No vendors yet'}</div>
+      <div style="font-size:14px;">${state.search ? 'Try a different search' : 'Tap the + button to add your first vendor'}</div>
+    </div>`;
+  } else {
+    html += '<div class="vendor-list">';
+    filtered.forEach(v => {
+      const initial = (v.company || '?').trim().charAt(0).toUpperCase();
+      html += `<div class="vendor-item" data-action="open-vendor" data-id="${v.id}">
+        <div class="vendor-avatar">
+          ${v.cardPhoto ? `<img src="${v.cardPhoto}" alt="">` : escapeHtml(initial)}
+        </div>
+        <div class="vendor-info">
+          <div class="vendor-name">${escapeHtml(v.company || 'Unnamed vendor')}</div>
+          <div class="vendor-meta">${v.booth ? 'Booth ' + escapeHtml(v.booth) : ''}${v.booth && v.contact ? ' · ' : ''}${escapeHtml(v.contact || '')}</div>
+        </div>
+        <div class="vendor-badge">${v.products?.length || 0} ${(v.products?.length === 1) ? 'item' : 'items'}</div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  html += `<button class="fab" data-action="add-vendor">+</button>`;
+  return html;
+}
+
+function renderVendorDetail() {
+  const v = state.vendors.find(x => x.id === state.selectedVendorId);
+  if (!v) { state.view = 'vendors'; return renderVendorList(); }
+
+  let html = `<div class="vendor-card">`;
+  if (v.cardPhoto) html += `<img src="${v.cardPhoto}" class="card-photo" alt="Business card">`;
+
+  const fields = [
+    ['Contact', v.contact],
+    ['Booth', v.booth],
+    ['Email', v.email ? `<a href="mailto:${escapeAttr(v.email)}">${escapeHtml(v.email)}</a>` : null],
+    ['Phone', v.phone ? `<a href="tel:${escapeAttr(v.phone)}">${escapeHtml(v.phone)}</a>` : null],
+    ['WeChat/WA', v.wechat],
+    ['Website', v.website],
+    ['Address', v.address],
+  ];
+  fields.forEach(([label, val]) => {
+    if (val) html += `<div class="info-row"><span class="info-label">${label}:</span><span class="info-value">${typeof val === 'string' && val.startsWith('<a') ? val : escapeHtml(val)}</span></div>`;
+  });
+
+  if (v.notes) html += `<div class="notes-box">${escapeHtml(v.notes)}</div>`;
+  if (v.voiceNote) html += `<div style="margin-top:12px;"><audio controls src="${v.voiceNote}"></audio></div>`;
+
+  html += `<div class="btn-row" style="margin-top:16px;">
+    <button class="btn btn-primary" data-action="email-vendor" data-id="${v.id}">✉ Email Vendor</button>
+    <button class="btn btn-secondary" data-action="edit-vendor" data-id="${v.id}" style="flex:0 0 auto;">✎</button>
+    <button class="btn btn-danger" data-action="delete-vendor" data-id="${v.id}" style="flex:0 0 auto;">🗑</button>
+  </div></div>`;
+
+  // Products
+  html += `<div class="section-header">
+    <h2>Products (${v.products?.length || 0})</h2>
+    <button class="btn btn-primary" data-action="add-product" style="padding:6px 12px; font-size:13px;">+ Product</button>
+  </div>`;
+
+  if (!v.products || v.products.length === 0) {
+    html += `<div class="empty">
+      <div class="empty-icon">📦</div>
+      <div style="font-size:14px;">No products yet. Tap "+ Product" to add one.</div>
+    </div>`;
+  } else {
+    html += '<div class="product-list">';
+    v.products.forEach(p => {
+      html += renderProductCard(p);
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function renderProductCard(p) {
+  let html = `<div class="product-card">`;
+  if (p.photos && p.photos.length > 0) {
+    html += `<div class="product-photos">`;
+    p.photos.forEach(ph => html += `<img src="${ph}" alt="">`);
+    html += `</div>`;
+  }
+  html += `<div class="product-body">
+    <div class="product-header">
+      <div style="flex:1; min-width:0;">
+        <div class="product-name">${escapeHtml(p.name || 'Unnamed product')}</div>
+        ${p.category ? `<div class="product-cat">${escapeHtml(p.category)}</div>` : ''}
+      </div>
+      <div class="product-actions">
+        <button data-action="edit-product" data-id="${p.id}">✎</button>
+        <button data-action="delete-product" data-id="${p.id}">🗑</button>
+      </div>
+    </div>`;
+
+  if (p.fabricTypes && p.fabricTypes.length > 0) {
+    html += `<div class="fabric-tags">`;
+    p.fabricTypes.forEach(f => html += `<span class="fabric-tag">${escapeHtml(f)}</span>`);
+    html += `</div>`;
+  }
+
+  const specs = [
+    ['Comp', p.composition], ['GSM', p.gsm], ['Width', p.width],
+    ['Price', p.price], ['MOQ', p.moq], ['Lead', p.leadTime],
+    ['Sample', p.sample], ['Origin', p.origin], ['Cert', p.certifications],
+    ['Code', p.barcode]
+  ].filter(([_, v]) => v);
+
+  if (specs.length > 0) {
+    html += `<div class="product-specs">`;
+    specs.forEach(([k, v]) => html += `<div><span class="spec-label">${k}:</span> ${escapeHtml(v)}</div>`);
+    html += `</div>`;
+  }
+
+  if (p.notes) html += `<div class="product-notes">${escapeHtml(p.notes)}</div>`;
+  if (p.voiceNote) html += `<div style="margin-top:8px;"><audio controls src="${p.voiceNote}" style="height:32px;"></audio></div>`;
+
+  html += `</div></div>`;
+  return html;
+}
+
+function renderVendorForm() {
+  const f = state.vendorForm;
+  return `<div class="form">
+    <div class="section">
+      <div class="section-title">Business Card</div>
+      <div class="section-body" id="card-photo-section">
+        ${f.cardPhoto ? `
+          <div style="position:relative;">
+            <img src="${f.cardPhoto}" style="width:100%; max-height:200px; object-fit:contain; background:#f5f5f4; border-radius:8px;">
+            <button class="btn btn-danger" data-action="remove-card-photo" style="position:absolute; top:8px; right:8px; padding:6px 10px;">✕</button>
+          </div>
+        ` : `
+          <label class="photo-capture">
+            <div style="font-size:32px;">💳</div>
+            <div style="font-weight:600; margin-top:8px;">Snap business card</div>
+            <div style="font-size:12px;">Opens camera on phone</div>
+            <input type="file" accept="image/*" capture="environment" data-action="capture-card" style="display:none;">
+          </label>
+        `}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Vendor Info</div>
+      <div class="section-body">
+        ${field('company', 'Company Name *', f.company, 'e.g. Guangzhou Textile Co.')}
+        ${field('booth', 'Booth Number', f.booth, 'e.g. 12.1 A45')}
+        ${field('contact', 'Contact Person', f.contact, 'e.g. Mr. Wang')}
+        ${field('email', 'Email', f.email, 'contact@example.com', 'email')}
+        ${field('phone', 'Phone', f.phone, '+86 ...', 'tel')}
+        ${field('wechat', 'WeChat / WhatsApp', f.wechat)}
+        ${field('website', 'Website', f.website)}
+        ${field('address', 'Address', f.address)}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Notes</div>
+      <div class="section-body">
+        <textarea data-field="notes" rows="4" placeholder="Tip: tap mic icon on phone keyboard for voice typing">${escapeHtml(f.notes || '')}</textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Voice Note</div>
+      <div class="section-body" id="voice-note-section">
+        ${renderVoiceRecorder(f.voiceNote, 'vendor')}
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-secondary" data-action="cancel-form">Cancel</button>
+      <button class="btn btn-primary" data-action="save-vendor">💾 Save Vendor</button>
+    </div>
+  </div>`;
+}
+
+function renderProductForm() {
+  const f = state.productForm;
+  let html = `<div class="form">
+    <div class="section">
+      <div class="section-title">Photos</div>
+      <div class="section-body">
+        <div class="photo-grid">`;
+  (f.photos || []).forEach((ph, i) => {
+    html += `<div class="photo-thumb">
+      <img src="${ph}" alt="">
+      <button class="remove" data-action="remove-photo" data-index="${i}">✕</button>
+    </div>`;
+  });
+  html += `<label class="add-photo">
+    <div style="font-size:24px;">📷</div>
+    <div>Add photo</div>
+    <input type="file" accept="image/*" capture="environment" data-action="add-photo" style="display:none;">
+  </label>
+        </div>
+        <div style="font-size:11px; color:#78716c; margin-top:6px;">Tip: take multiple shots — product, label, swatch</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Basic Info</div>
+      <div class="section-body">
+        ${field('name', 'Product Name *', f.name, 'e.g. Embroidered cotton lawn')}
+        ${selectField('category', 'Category', f.category, CATEGORIES)}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Fabric Type (tap all that apply)</div>
+      <div class="section-body">
+        <div class="chips">`;
+  FABRIC_TYPES.forEach(t => {
+    const active = (f.fabricTypes || []).includes(t);
+    html += `<div class="chip ${active ? 'active' : ''}" data-action="toggle-fabric" data-value="${escapeAttr(t)}">${escapeHtml(t)}</div>`;
+  });
+  html += `</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Specifications</div>
+      <div class="section-body">
+        ${field('composition', 'Composition', f.composition, 'e.g. 100% Cotton, 60/40 CVC')}
+        <div class="field-row">
+          ${field('gsm', 'GSM / Weight', f.gsm, 'e.g. 120')}
+          ${field('width', 'Width', f.width, 'e.g. 58&quot;')}
+        </div>
+        ${field('dyeingMethod', 'Dyeing / Finish', f.dyeingMethod, 'e.g. reactive dye, pigment print')}
+        ${field('origin', 'Origin', f.origin, 'e.g. Made in China')}
+        ${field('certifications', 'Certifications', f.certifications, 'e.g. OEKO-TEX, GOTS, BCI')}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Commercial Terms</div>
+      <div class="section-body">
+        <div class="field-row">
+          ${field('moq', 'MOQ', f.moq, 'e.g. 1000m')}
+          ${field('price', 'FOB Price', f.price, 'e.g. $1.20/m')}
+        </div>
+        ${field('leadTime', 'Lead Time', f.leadTime, 'e.g. 30-45 days')}
+        ${selectField('sample', 'Sample Available', f.sample, ['Yes - free', 'Yes - paid', 'No', 'Will send by courier'])}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Barcode / Article Code</div>
+      <div class="section-body">
+        <div style="display:flex; gap:8px;">
+          <input type="text" data-field="barcode" value="${escapeAttr(f.barcode || '')}" placeholder="Article code or barcode" style="flex:1; padding:10px 12px; border:1px solid #d6d3d1; border-radius:8px; font-size:16px;">
+          <button class="btn btn-primary" data-action="scan-barcode">📷 Scan</button>
+        </div>
+        <div id="barcode-scanner-area"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Notes</div>
+      <div class="section-body">
+        <textarea data-field="notes" rows="3" placeholder="Quality, comparison, requests…">${escapeHtml(f.notes || '')}</textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Voice Note</div>
+      <div class="section-body" id="voice-note-section">
+        ${renderVoiceRecorder(f.voiceNote, 'product')}
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-secondary" data-action="cancel-form">Cancel</button>
+      <button class="btn btn-primary" data-action="save-product">💾 Save Product</button>
+    </div>
+  </div>`;
+  return html;
+}
+
+function renderProfileForm() {
+  const p = state.profile;
+  return `<div class="form">
+    <div class="alert alert-info">This info is used in the email template sent to vendors. Fill it once and forget it.</div>
+
+    <div class="section">
+      <div class="section-title">Your Details</div>
+      <div class="section-body">
+        ${field('name', 'Your Name', p.name)}
+        ${field('title', 'Job Title', p.title, 'e.g. CEO, Sourcing Manager')}
+        ${field('company', 'Company', p.company)}
+        ${field('email', 'Email *', p.email, '', 'email')}
+        ${field('phone', 'Phone', p.phone, '', 'tel')}
+        ${field('website', 'Website', p.website)}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Company Introduction</div>
+      <div class="section-body">
+        <textarea data-field="intro" rows="6" placeholder="Brief intro about BATIK that will be included in every email…">${escapeHtml(p.intro || '')}</textarea>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-secondary" data-action="cancel-profile">Cancel</button>
+      <button class="btn btn-primary" data-action="save-profile">💾 Save Profile</button>
+    </div>
+  </div>`;
+}
+
+function renderVoiceRecorder(audio) {
+  if (audio) {
+    return `<div style="display:flex; gap:8px; align-items:center;">
+      <audio controls src="${audio}" style="flex:1;"></audio>
+      <button class="btn btn-secondary" data-action="delete-voice" style="padding:8px 12px;">🗑</button>
+    </div>`;
+  }
+  return `<button class="btn btn-primary" data-action="record-voice">🎤 Record Voice Note</button>
+    <div id="voice-recording-status" style="margin-top:8px;"></div>`;
+}
+
+function field(name, label, value, placeholder = '', type = 'text') {
+  return `<div class="field">
+    <label>${label}</label>
+    <input type="${type}" data-field="${name}" value="${escapeAttr(value || '')}" placeholder="${escapeAttr(placeholder)}">
+  </div>`;
+}
+
+function selectField(name, label, value, options) {
+  return `<div class="field">
+    <label>${label}</label>
+    <select data-field="${name}">
+      <option value="">— Select —</option>
+      ${options.map(o => `<option value="${escapeAttr(o)}" ${o === value ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
+    </select>
+  </div>`;
+}
+
+// =================== EVENT HANDLERS ===================
+function attachEventListeners() {
+  // Search input
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      state.search = e.target.value;
+      // Re-render only the list, not the input (would lose focus)
+      const listContainer = document.querySelector('.vendor-list');
+      const empty = document.querySelector('.empty');
+      // simple approach: just re-render list section
+      const q = state.search.toLowerCase();
+      const filtered = state.vendors.filter(v => !q || (v.company || '').toLowerCase().includes(q) || (v.booth || '').toLowerCase().includes(q) || (v.contact || '').toLowerCase().includes(q));
+      const oldList = listContainer || empty;
+      if (oldList) {
+        let newHtml;
+        if (filtered.length === 0) {
+          newHtml = `<div class="empty">
+            <div class="empty-icon">${state.search ? '🔍' : '🏢'}</div>
+            <div style="font-weight:600; margin-bottom:4px;">${state.search ? 'No matches' : 'No vendors yet'}</div>
+            <div style="font-size:14px;">${state.search ? 'Try a different search' : 'Tap the + button to add your first vendor'}</div>
+          </div>`;
+        } else {
+          newHtml = '<div class="vendor-list">';
+          filtered.forEach(v => {
+            const initial = (v.company || '?').trim().charAt(0).toUpperCase();
+            newHtml += `<div class="vendor-item" data-action="open-vendor" data-id="${v.id}">
+              <div class="vendor-avatar">${v.cardPhoto ? `<img src="${v.cardPhoto}" alt="">` : escapeHtml(initial)}</div>
+              <div class="vendor-info">
+                <div class="vendor-name">${escapeHtml(v.company || 'Unnamed vendor')}</div>
+                <div class="vendor-meta">${v.booth ? 'Booth ' + escapeHtml(v.booth) : ''}${v.booth && v.contact ? ' · ' : ''}${escapeHtml(v.contact || '')}</div>
+              </div>
+              <div class="vendor-badge">${v.products?.length || 0} ${(v.products?.length === 1) ? 'item' : 'items'}</div>
+            </div>`;
+          });
+          newHtml += '</div>';
+        }
+        const tmp = document.createElement('div');
+        tmp.innerHTML = newHtml;
+        oldList.replaceWith(tmp.firstElementChild);
+      }
+    });
+  }
+
+  // Form fields → update state directly
+  document.querySelectorAll('[data-field]').forEach(el => {
+    el.addEventListener('input', (e) => {
+      const name = el.dataset.field;
+      const val = el.value;
+      if (state.view === 'add-vendor' || state.view === 'edit-vendor') state.vendorForm[name] = val;
+      else if (state.view === 'add-product' || state.view === 'edit-product') state.productForm[name] = val;
+      else if (state.view === 'settings') state.profile[name] = val;
+    });
+  });
+
+  // Action buttons
+  document.querySelectorAll('[data-action]').forEach(el => {
+    const action = el.dataset.action;
+    const eventType = (el.tagName === 'INPUT' && el.type === 'file') ? 'change' : 'click';
+    el.addEventListener(eventType, (e) => handleAction(action, el, e));
+  });
+}
+
+async function handleAction(action, el, evt) {
+  switch (action) {
+    case 'back': goBack(); break;
+    case 'export': exportData(); break;
+    case 'settings': state.view = 'settings'; render(); break;
+    case 'dismiss-install':
+      state.showInstallBanner = false;
+      localStorage.setItem('cantonFair_installDismissed', '1');
+      render();
+      break;
+    case 'open-vendor':
+      state.selectedVendorId = el.dataset.id;
+      state.view = 'vendor-detail';
+      render();
+      break;
+    case 'add-vendor':
+      state.vendorForm = { company: '', contact: '', booth: '', email: '', phone: '', wechat: '', website: '', address: '', notes: '', cardPhoto: null, voiceNote: null };
+      state.view = 'add-vendor';
+      render();
+      break;
+    case 'edit-vendor': {
+      const v = state.vendors.find(x => x.id === el.dataset.id);
+      if (v) { state.vendorForm = { ...v }; state.view = 'edit-vendor'; render(); }
+      break;
+    }
+    case 'delete-vendor':
+      if (confirm('Delete this vendor and all their products?')) {
+        state.vendors = state.vendors.filter(v => v.id !== el.dataset.id);
+        saveState();
+        state.selectedVendorId = null;
+        state.view = 'vendors';
+        render();
+      }
+      break;
+    case 'save-vendor': saveVendor(); break;
+    case 'cancel-form':
+      if (state.view === 'add-vendor' || state.view === 'edit-vendor') state.view = state.selectedVendorId ? 'vendor-detail' : 'vendors';
+      else state.view = 'vendor-detail';
+      render();
+      break;
+    case 'capture-card': await handleCardCapture(evt); break;
+    case 'remove-card-photo':
+      state.vendorForm.cardPhoto = null;
+      render();
+      break;
+    case 'add-product':
+      state.productForm = { name: '', category: '', fabricTypes: [], composition: '', gsm: '', width: '', moq: '', price: '', leadTime: '', sample: '', certifications: '', barcode: '', dyeingMethod: '', origin: '', photos: [], notes: '', voiceNote: null };
+      state.view = 'add-product';
+      render();
+      break;
+    case 'edit-product': {
+      const v = state.vendors.find(x => x.id === state.selectedVendorId);
+      const p = v?.products?.find(p => p.id === el.dataset.id);
+      if (p) { state.productForm = JSON.parse(JSON.stringify(p)); state.editingProductId = p.id; state.view = 'edit-product'; render(); }
+      break;
+    }
+    case 'delete-product':
+      if (confirm('Delete this product?')) {
+        const v = state.vendors.find(x => x.id === state.selectedVendorId);
+        if (v) {
+          v.products = v.products.filter(p => p.id !== el.dataset.id);
+          saveState();
+          render();
+        }
+      }
+      break;
+    case 'save-product': saveProduct(); break;
+    case 'add-photo': await handleAddPhoto(evt); break;
+    case 'remove-photo':
+      state.productForm.photos.splice(parseInt(el.dataset.index), 1);
+      render();
+      break;
+    case 'toggle-fabric': {
+      const val = el.dataset.value;
+      const list = state.productForm.fabricTypes || [];
+      state.productForm.fabricTypes = list.includes(val) ? list.filter(x => x !== val) : [...list, val];
+      render();
+      break;
+    }
+    case 'scan-barcode': toggleBarcodeScanner(); break;
+    case 'record-voice': await startVoiceRecording(); break;
+    case 'stop-voice': stopVoiceRecording(); break;
+    case 'delete-voice':
+      if (state.view.includes('vendor')) state.vendorForm.voiceNote = null;
+      else state.productForm.voiceNote = null;
+      render();
+      break;
+    case 'email-vendor': composeEmail(el.dataset.id); break;
+    case 'save-profile': saveState(); state.view = 'vendors'; render(); alert('Profile saved!'); break;
+    case 'cancel-profile':
+      loadState(); // revert
+      state.view = 'vendors';
+      render();
+      break;
+  }
+}
+
+function goBack() {
+  if (state.view === 'vendor-detail') { state.view = 'vendors'; state.selectedVendorId = null; }
+  else if (state.view === 'add-product' || state.view === 'edit-product') state.view = 'vendor-detail';
+  else if (state.view === 'add-vendor' || state.view === 'edit-vendor') state.view = state.selectedVendorId ? 'vendor-detail' : 'vendors';
+  else state.view = 'vendors';
+  render();
+}
+
+async function handleCardCapture(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  try {
+    const compressed = await compressImage(file);
+    state.vendorForm.cardPhoto = compressed;
+    render();
+  } catch (e) { alert('Could not load image'); }
+}
+
+async function handleAddPhoto(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  try {
+    const compressed = await compressImage(file);
+    if (!state.productForm.photos) state.productForm.photos = [];
+    state.productForm.photos.push(compressed);
+    render();
+  } catch (e) { alert('Could not load image'); }
+}
+
+function saveVendor() {
+  const f = state.vendorForm;
+  if (!f.company?.trim()) { alert('Company name is required'); return; }
+  if (state.view === 'add-vendor') {
+    state.vendors.unshift({ ...f, id: Date.now().toString(), products: [], createdAt: Date.now() });
+    state.selectedVendorId = state.vendors[0].id;
+  } else {
+    const v = state.vendors.find(x => x.id === state.selectedVendorId);
+    if (v) Object.assign(v, f);
+  }
+  saveState();
+  state.view = 'vendor-detail';
+  render();
+}
+
+function saveProduct() {
+  const f = state.productForm;
+  if (!f.name?.trim()) { alert('Product name is required'); return; }
+  const v = state.vendors.find(x => x.id === state.selectedVendorId);
+  if (!v) return;
+  if (!v.products) v.products = [];
+  if (state.view === 'add-product') {
+    v.products.unshift({ ...f, id: Date.now().toString(), createdAt: Date.now() });
+  } else {
+    const p = v.products.find(p => p.id === state.editingProductId);
+    if (p) Object.assign(p, f);
+  }
+  saveState();
+  state.view = 'vendor-detail';
+  render();
+}
+
+// =================== VOICE RECORDER ===================
+let mediaRecorder = null;
+let recordingChunks = [];
+let recordingTimer = null;
+let recordingStream = null;
+
+async function startVoiceRecording() {
+  try {
+    recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(recordingStream);
+    recordingChunks = [];
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordingChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordingChunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (state.view.includes('vendor')) state.vendorForm.voiceNote = reader.result;
+        else state.productForm.voiceNote = reader.result;
+        render();
+      };
+      reader.readAsDataURL(blob);
+      recordingStream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+
+    // Update UI to show recording
+    let elapsed = 0;
+    const status = document.getElementById('voice-recording-status');
+    const recordBtn = document.querySelector('[data-action="record-voice"]');
+    if (recordBtn) recordBtn.style.display = 'none';
+    if (status) {
+      status.innerHTML = `<div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn btn-secondary" data-action="stop-voice">⏹ Stop</button>
+        <div class="recording-indicator"><div class="recording-dot"></div><span id="rec-timer">0:00</span></div>
+      </div>`;
+      status.querySelector('[data-action="stop-voice"]').addEventListener('click', stopVoiceRecording);
+    }
+    recordingTimer = setInterval(() => {
+      elapsed++;
+      const t = document.getElementById('rec-timer');
+      if (t) t.textContent = `${Math.floor(elapsed/60)}:${(elapsed%60).toString().padStart(2,'0')}`;
+    }, 1000);
+  } catch (err) {
+    alert('Could not access microphone. Please allow mic permission and try again.');
+  }
+}
+
+function stopVoiceRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
+}
+
+// =================== BARCODE SCANNER ===================
+let scanStream = null;
+let scanRaf = null;
+let scanDetector = null;
+
+async function toggleBarcodeScanner() {
+  const area = document.getElementById('barcode-scanner-area');
+  if (!area) return;
+  if (scanStream) { stopBarcodeScanner(); return; }
+
+  if (!('BarcodeDetector' in window)) {
+    area.innerHTML = `<div class="alert">Barcode scanning is not available on this device. Please type the code manually. (Works best on Android Chrome.)</div>`;
+    return;
+  }
+
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    area.innerHTML = `<div class="video-preview">
+      <video id="scan-video" playsinline muted></video>
+      <div class="scan-frame"></div>
+    </div>`;
+    const video = document.getElementById('scan-video');
+    video.srcObject = scanStream;
+    await video.play();
+    scanDetector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code', 'data_matrix'] });
+    scanLoop(video);
+  } catch (err) {
+    area.innerHTML = `<div class="alert alert-error">Could not access camera: ${escapeHtml(err.message)}</div>`;
+    scanStream = null;
+  }
+}
+
+async function scanLoop(video) {
+  if (!scanDetector || !scanStream) return;
+  try {
+    const codes = await scanDetector.detect(video);
+    if (codes.length > 0) {
+      state.productForm.barcode = codes[0].rawValue;
+      stopBarcodeScanner();
+      render();
+      return;
+    }
+  } catch (e) {}
+  scanRaf = requestAnimationFrame(() => scanLoop(video));
+}
+
+function stopBarcodeScanner() {
+  if (scanRaf) { cancelAnimationFrame(scanRaf); scanRaf = null; }
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  const area = document.getElementById('barcode-scanner-area');
+  if (area) area.innerHTML = '';
+}
+
+// =================== EMAIL ===================
+function composeEmail(vendorId) {
+  const v = state.vendors.find(x => x.id === vendorId);
+  if (!v) return;
+  const p = state.profile;
+  const productList = v.products && v.products.length > 0
+    ? '\n\nProducts we discussed:\n' + v.products.map(x => `• ${x.name}${x.category ? ' (' + x.category + ')' : ''}`).join('\n')
+    : '';
+  const subject = `Great meeting you at Canton Fair – ${p.company || 'BATIK'}`;
+  const body = `Dear ${v.contact || 'Sir/Madam'},
+
+It was a pleasure meeting you at the Canton Fair${v.booth ? ` (Booth ${v.booth})` : ''}. Thank you for taking the time to introduce ${v.company || 'your company'} and share details about your products.
+
+${p.intro || ''}
+
+I would like to continue the conversation and explore potential collaboration.${productList}
+
+Please find my contact details below for further correspondence:
+
+${p.name || ''}${p.title ? ', ' + p.title : ''}
+${p.company || 'BATIK'}
+Email: ${p.email || ''}
+Phone: ${p.phone || ''}
+${p.website ? 'Website: ' + p.website : ''}
+
+Looking forward to hearing from you.
+
+Best regards,
+${p.name || ''}`;
+  const mailto = `mailto:${encodeURIComponent(v.email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
+}
+
+// =================== EXPORT ===================
+function exportData() {
+  const data = { profile: state.profile, vendors: state.vendors, exportedAt: new Date().toISOString() };
+
+  // JSON
+  const json = JSON.stringify(data, null, 2);
+  downloadFile(`canton-fair-${new Date().toISOString().split('T')[0]}.json`, json, 'application/json');
+
+  // CSV (without photos)
+  const rows = [['Vendor', 'Booth', 'Contact', 'Email', 'Phone', 'WeChat/WA', 'Website', 'Vendor Notes', 'Product', 'Category', 'Fabric Types', 'Composition', 'GSM', 'Width', 'MOQ', 'FOB Price', 'Lead Time', 'Sample', 'Certifications', 'Origin', 'Dyeing', 'Barcode', 'Product Notes']];
+  state.vendors.forEach(v => {
+    const base = [v.company, v.booth, v.contact, v.email, v.phone, v.wechat, v.website, v.notes];
+    if (!v.products || v.products.length === 0) {
+      rows.push([...base, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    } else {
+      v.products.forEach(p => {
+        rows.push([...base, p.name, p.category, (p.fabricTypes || []).join('; '), p.composition, p.gsm, p.width, p.moq, p.price, p.leadTime, p.sample, p.certifications, p.origin, p.dyeingMethod, p.barcode, p.notes]);
+      });
+    }
+  });
+  const csv = rows.map(r => r.map(c => `"${(c == null ? '' : c.toString()).replace(/"/g, '""')}"`).join(',')).join('\n');
+  setTimeout(() => downloadFile(`canton-fair-${new Date().toISOString().split('T')[0]}.csv`, csv, 'text/csv'), 200);
+}
+
+function downloadFile(name, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+// =================== INIT ===================
+loadState();
+render();
+</script>
+</body>
+</html>
