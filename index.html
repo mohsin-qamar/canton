@@ -283,8 +283,54 @@
   .alert-info { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
   .alert-error { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
 
-  /* Modal for custom input */
-  .modal-overlay {
+  /* Backup reminder banner */
+  .backup-banner {
+    background: #fef3c7; border-bottom: 1px solid #fde68a; padding: 10px 16px;
+    display: flex; align-items: center; gap: 10px; font-size: 13px; color: #78350f;
+  }
+  .backup-banner.success { background: #d1fae5; border-color: #a7f3d0; color: #065f46; }
+  .backup-banner .bb-text { flex: 1; line-height: 1.3; }
+  .backup-banner button {
+    background: #b91c1c; color: white; border: none; padding: 8px 12px;
+    border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;
+    white-space: nowrap;
+  }
+  .backup-banner .dismiss-btn { background: transparent; color: #78350f; padding: 4px 8px; }
+
+  /* GitHub status indicator */
+  .github-status {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+    padding: 3px 8px; border-radius: 10px; margin-left: 8px;
+  }
+  .github-status.ok { background: #d1fae5; color: #065f46; }
+  .github-status.error { background: #fee2e2; color: #991b1b; }
+  .github-status.syncing { background: #dbeafe; color: #1e40af; }
+
+  /* Action sheet for export options */
+  .action-sheet-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100;
+    display: flex; align-items: flex-end; justify-content: center;
+    animation: fadeIn 0.15s;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .action-sheet {
+    background: white; border-radius: 14px 14px 0 0; padding: 8px;
+    width: 100%; max-width: 500px; padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+  .action-sheet h3 {
+    margin: 0; padding: 14px 16px 8px; font-size: 13px; color: #78716c;
+    text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+  }
+  .action-sheet-btn {
+    width: 100%; text-align: left; background: white; border: none;
+    padding: 14px 16px; font-size: 16px; cursor: pointer; border-radius: 8px;
+    display: flex; align-items: center; gap: 12px; color: #1c1917;
+    font-family: inherit;
+  }
+  .action-sheet-btn:active { background: #f5f5f4; }
+  .action-sheet-btn .icon { font-size: 22px; width: 28px; text-align: center; }
+  .action-sheet-btn .desc { font-size: 12px; color: #78716c; margin-top: 2px; }
+  .action-sheet-btn .label-wrap { flex: 1; }
     position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100;
     display: flex; align-items: center; justify-content: center; padding: 20px;
   }
@@ -295,6 +341,8 @@
     font-size: 16px; margin-bottom: 16px; outline: none;
   }
   .modal input:focus { border-color: #b91c1c; }
+  .modal label { display: block; font-size: 12px; font-weight: 600; color: #57534e; margin-bottom: 6px; }
+  .modal .desc-text { font-size: 12px; color: #78716c; margin-bottom: 12px; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -353,11 +401,19 @@ let state = {
     email: '',
     phone: '',
     website: '',
-    intro: 'BATIK is a Pakistan-based company specializing in quality fabrics and garments, serving both the traditional Pakistani clothing market and Western garment industry. We work with woven, ecru, dyed, printed, and embroidered fabrics.'
+    intro: 'BATIK is a Pakistan-based company specializing in quality fabrics and garments, serving both the traditional Pakistani clothing market and Western garment industry. We work with woven, ecru, dyed, printed, and embroidered fabrics.',
+    githubUser: '',
+    githubRepo: '',
+    githubToken: '',
+    githubEnabled: false
   },
   vendorForm: null,
   productForm: null,
   modal: null,
+  lastBackupAt: 0,
+  changesSinceBackup: 0,
+  githubStatus: '', // '', 'syncing', 'ok', 'error'
+  githubLastError: '',
 };
 
 // =================== STORAGE ===================
@@ -368,6 +424,8 @@ function saveState() {
     localStorage.setItem('cf_customVendorCats', JSON.stringify(state.customVendorCategories));
     localStorage.setItem('cf_customProductCats', JSON.stringify(state.customProductCategories));
     localStorage.setItem('cf_customFabricTypes', JSON.stringify(state.customFabricTypes));
+    localStorage.setItem('cf_lastBackupAt', String(state.lastBackupAt));
+    localStorage.setItem('cf_changesSinceBackup', String(state.changesSinceBackup));
   } catch (e) {
     alert('Storage full! Please export your data and consider removing some photos.');
   }
@@ -385,7 +443,37 @@ function loadState() {
     if (pc) state.customProductCategories = JSON.parse(pc);
     const ft = localStorage.getItem('cf_customFabricTypes');
     if (ft) state.customFabricTypes = JSON.parse(ft);
+    const lba = localStorage.getItem('cf_lastBackupAt');
+    if (lba) state.lastBackupAt = parseInt(lba) || 0;
+    const csb = localStorage.getItem('cf_changesSinceBackup');
+    if (csb) state.changesSinceBackup = parseInt(csb) || 0;
   } catch (e) { console.error(e); }
+}
+
+// Mark a change happened (called on save vendor/product)
+function markChange() {
+  state.changesSinceBackup = (state.changesSinceBackup || 0) + 1;
+  saveState();
+}
+
+// Check if reminder banner should show
+function shouldShowBackupReminder() {
+  if (!state.lastBackupAt) {
+    // Never backed up — show only if there are changes
+    return state.changesSinceBackup > 0;
+  }
+  const hoursSince = (Date.now() - state.lastBackupAt) / (1000 * 60 * 60);
+  return hoursSince >= 6 || state.changesSinceBackup >= 5;
+}
+
+function formatTimeAgo(ts) {
+  if (!ts) return 'never';
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 // =================== HELPERS ===================
@@ -451,7 +539,42 @@ function render() {
   const app = document.getElementById('app');
   app.innerHTML = renderHeader() + renderView();
   if (state.modal) app.innerHTML += renderModal();
+  if (state.actionSheet) app.innerHTML += renderActionSheet();
   attachEventListeners();
+}
+
+function renderActionSheet() {
+  const p = state.profile;
+  return `<div class="action-sheet-overlay" data-action="close-sheet">
+    <div class="action-sheet" onclick="event.stopPropagation()">
+      <h3>Backup & Export</h3>
+      ${p.githubEnabled ? `
+      <button class="action-sheet-btn" data-action="manual-github-backup">
+        <span class="icon">☁</span>
+        <div class="label-wrap">
+          <div>Backup to GitHub now</div>
+          <div class="desc">Save snapshot to your private repo with timestamp</div>
+        </div>
+      </button>` : ''}
+      <button class="action-sheet-btn" data-action="email-backup">
+        <span class="icon">📧</span>
+        <div class="label-wrap">
+          <div>Email backup to myself</div>
+          <div class="desc">Opens mail with backup file ready to send</div>
+        </div>
+      </button>
+      <button class="action-sheet-btn" data-action="download-backup">
+        <span class="icon">⬇</span>
+        <div class="label-wrap">
+          <div>Download JSON + CSV</div>
+          <div class="desc">Save backup files to phone/Files app</div>
+        </div>
+      </button>
+      <button class="action-sheet-btn" data-action="close-sheet" style="color:#78716c; justify-content:center;">
+        <div>Cancel</div>
+      </button>
+    </div>
+  </div>`;
 }
 
 function renderHeader() {
@@ -894,6 +1017,13 @@ function renderProductForm() {
 
 function renderProfileForm() {
   const p = state.profile;
+  const ghStatusBadge = p.githubEnabled
+    ? (state.githubStatus === 'ok' ? '<span class="github-status ok">✓ Connected</span>'
+       : state.githubStatus === 'error' ? `<span class="github-status error">✗ ${escapeHtml(state.githubLastError || 'Error')}</span>`
+       : state.githubStatus === 'syncing' ? '<span class="github-status syncing">Testing…</span>'
+       : '<span class="github-status syncing">Not tested yet</span>')
+    : '';
+
   return `<div class="form">
     <div class="alert alert-info">This info is used in the email template sent to vendors. Fill it once and forget it.</div>
 
@@ -903,7 +1033,7 @@ function renderProfileForm() {
         ${field('name', 'Your Name', p.name)}
         ${field('title', 'Job Title', p.title, 'e.g. CEO, Sourcing Manager')}
         ${field('company', 'Company', p.company)}
-        ${field('email', 'Email *', p.email, '', 'email')}
+        ${field('email', 'Email *', p.email, 'used for backup emails too', 'email')}
         ${field('phone', 'Phone (with country code)', p.phone, '+92 ...', 'tel')}
         ${field('website', 'Website', p.website)}
       </div>
@@ -913,6 +1043,27 @@ function renderProfileForm() {
       <div class="section-title">Company Introduction</div>
       <div class="section-body">
         <textarea data-field="intro" rows="8" placeholder="Brief intro about BATIK that will be included in every email…">${escapeHtml(p.intro || '')}</textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">☁ Cloud Backup (GitHub) ${ghStatusBadge}</div>
+      <div class="section-body">
+        <div style="font-size:12px; color:#78716c; margin-bottom:12px; line-height:1.5;">
+          Auto-saves your data to a private GitHub repo on every change. Each save creates a timestamped history file you can roll back to.
+          <br><br><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" style="color:#b91c1c;">→ Generate token</a> · Need: Contents read+write on your private backup repo.
+        </div>
+        ${field('githubUser', 'GitHub Username', p.githubUser, 'e.g. yourusername')}
+        ${field('githubRepo', 'Backup Repo Name', p.githubRepo, 'e.g. canton-fair-backup')}
+        <div class="field">
+          <label>Personal Access Token</label>
+          <input type="password" data-field="githubToken" value="${escapeAttr(p.githubToken || '')}" placeholder="github_pat_...">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" data-action="test-github">🔌 Test & Enable</button>
+          ${p.githubEnabled ? '<button class="btn btn-danger" data-action="disable-github" style="flex:0 0 auto;">Disable</button>' : ''}
+        </div>
+        ${p.githubEnabled ? `<button class="btn btn-secondary btn-block" data-action="restore-github" style="margin-top:8px;">⬇ Restore from GitHub</button>` : ''}
       </div>
     </div>
 
@@ -1052,7 +1203,42 @@ function attachEventListeners() {
 async function handleAction(action, el, evt) {
   switch (action) {
     case 'back': goBack(); break;
-    case 'export': exportData(); break;
+    case 'export':
+    case 'open-export':
+      state.actionSheet = true;
+      render();
+      break;
+    case 'close-sheet':
+      state.actionSheet = false;
+      render();
+      break;
+    case 'download-backup':
+      state.actionSheet = false;
+      exportData();
+      markBackupDone();
+      render();
+      break;
+    case 'email-backup':
+      state.actionSheet = false;
+      emailBackup();
+      break;
+    case 'manual-github-backup':
+      state.actionSheet = false;
+      render();
+      triggerGithubBackup(true);
+      break;
+    case 'test-github':
+      testGithubConnection();
+      break;
+    case 'disable-github':
+      state.profile.githubEnabled = false;
+      state.githubStatus = '';
+      saveState();
+      render();
+      break;
+    case 'restore-github':
+      restoreFromGithub();
+      break;
     case 'import':
       document.getElementById('hidden-import').click();
       break;
@@ -1255,10 +1441,13 @@ function saveVendor() {
     const v = state.vendors.find(x => x.id === state.selectedVendorId);
     if (v) Object.assign(v, f);
   }
+  markChange();
   saveState();
   state.view = 'vendor-detail';
   render();
   window.scrollTo(0, 0);
+  // Trigger GitHub auto-backup
+  if (state.profile.githubEnabled) triggerGithubBackup();
 }
 
 function saveProduct() {
@@ -1273,9 +1462,12 @@ function saveProduct() {
     const p = v.products.find(p => p.id === state.editingProductId);
     if (p) Object.assign(p, f);
   }
+  markChange();
   saveState();
   state.view = 'vendor-detail';
   render();
+  // Trigger GitHub auto-backup
+  if (state.profile.githubEnabled) triggerGithubBackup();
 }
 
 // =================== VOICE RECORDER ===================
@@ -1388,8 +1580,8 @@ ${p.name || ''}`;
 }
 
 // =================== EXPORT / IMPORT ===================
-function exportData() {
-  const data = {
+function buildBackupData() {
+  return {
     profile: state.profile,
     vendors: state.vendors,
     customVendorCategories: state.customVendorCategories,
@@ -1397,7 +1589,16 @@ function exportData() {
     customFabricTypes: state.customFabricTypes,
     exportedAt: new Date().toISOString()
   };
-  const json = JSON.stringify(data, null, 2);
+}
+
+function markBackupDone() {
+  state.lastBackupAt = Date.now();
+  state.changesSinceBackup = 0;
+  saveState();
+}
+
+function exportData() {
+  const json = JSON.stringify(buildBackupData(), null, 2);
   downloadFile(`batik-canton-${new Date().toISOString().split('T')[0]}.json`, json, 'application/json');
 
   const rows = [['Vendor', 'Category', 'Booth', 'Contact', 'Designation', 'Email', 'Phone', 'WeChat/WA', 'Website', 'Rating', 'Vendor Notes',
@@ -1415,6 +1616,228 @@ function exportData() {
   });
   const csv = rows.map(r => r.map(c => `"${(c == null ? '' : c.toString()).replace(/"/g, '""')}"`).join(',')).join('\n');
   setTimeout(() => downloadFile(`batik-canton-${new Date().toISOString().split('T')[0]}.csv`, csv, 'text/csv'), 200);
+}
+
+// =================== EMAIL BACKUP ===================
+function emailBackup() {
+  const data = buildBackupData();
+  const summary = `BATIK Canton Fair backup
+Date: ${new Date().toLocaleString()}
+Vendors: ${state.vendors.length}
+Products: ${state.vendors.reduce((s, v) => s + (v.products?.length || 0), 0)}
+
+The full backup is available as a JSON download — please tap "Download JSON + CSV" first, then attach the files manually to this email.
+
+(Email apps don't allow auto-attaching from web apps for security reasons.)`;
+
+  // Trigger download FIRST so user has the file ready
+  const json = JSON.stringify(data, null, 2);
+  downloadFile(`batik-canton-${new Date().toISOString().split('T')[0]}.json`, json, 'application/json');
+  markBackupDone();
+
+  // Then open mail
+  setTimeout(() => {
+    const to = state.profile.email || '';
+    const subject = `BATIK Canton Fair Backup - ${new Date().toISOString().split('T')[0]}`;
+    const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(summary)}`;
+    window.location.href = mailto;
+    render();
+  }, 400);
+}
+
+// =================== GITHUB BACKUP ===================
+let githubBackupTimer = null;
+let githubBackupPending = false;
+
+async function testGithubConnection() {
+  const p = state.profile;
+  if (!p.githubUser?.trim() || !p.githubRepo?.trim() || !p.githubToken?.trim()) {
+    alert('Please fill in username, repo name, and token first.');
+    return;
+  }
+  state.githubStatus = 'syncing';
+  state.githubLastError = '';
+  render();
+  try {
+    const url = `https://api.github.com/repos/${encodeURIComponent(p.githubUser)}/${encodeURIComponent(p.githubRepo)}`;
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${p.githubToken}`,
+        'Accept': 'application/vnd.github+json'
+      }
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || `HTTP ${res.status}`);
+    }
+    state.profile.githubEnabled = true;
+    state.githubStatus = 'ok';
+    state.githubLastError = '';
+    saveState();
+    alert('✓ Connected to GitHub! Auto-backup is now enabled. Every save will sync.');
+    // Do an initial backup
+    triggerGithubBackup(true);
+  } catch (err) {
+    state.githubStatus = 'error';
+    state.githubLastError = err.message;
+    state.profile.githubEnabled = false;
+    saveState();
+    alert('Could not connect: ' + err.message + '\n\nCheck username, repo name, and token permissions.');
+    render();
+  }
+}
+
+function triggerGithubBackup(immediate = false) {
+  if (!state.profile.githubEnabled) return;
+  // Debounce: wait 2 sec after last change before backing up (unless immediate)
+  if (githubBackupTimer) clearTimeout(githubBackupTimer);
+  if (immediate) {
+    runGithubBackup();
+  } else {
+    githubBackupPending = true;
+    githubBackupTimer = setTimeout(() => {
+      githubBackupPending = false;
+      runGithubBackup();
+    }, 2000);
+  }
+}
+
+async function runGithubBackup() {
+  const p = state.profile;
+  if (!p.githubEnabled) return;
+  state.githubStatus = 'syncing';
+  state.githubLastError = '';
+  // Update UI silently if on vendor list
+  updateBackupBannerOnly();
+
+  try {
+    const data = buildBackupData();
+    const json = JSON.stringify(data, null, 2);
+    const contentB64 = b64EncodeUnicode(json);
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const summary = `${state.vendors.length} vendors, ${state.vendors.reduce((s,v) => s + (v.products?.length||0), 0)} products`;
+
+    // 1) Update latest.json (overwritten each time)
+    await putGithubFile(p, 'latest.json', contentB64, `Backup ${ts} — ${summary}`);
+
+    // 2) Append timestamped history file (never overwritten)
+    await putGithubFile(p, `history/${ts}.json`, contentB64, `History snapshot ${ts}`);
+
+    state.githubStatus = 'ok';
+    state.lastBackupAt = Date.now();
+    state.changesSinceBackup = 0;
+    saveState();
+    updateBackupBannerOnly();
+  } catch (err) {
+    console.error('GitHub backup failed:', err);
+    state.githubStatus = 'error';
+    state.githubLastError = err.message;
+    updateBackupBannerOnly();
+  }
+}
+
+async function putGithubFile(p, path, contentB64, message) {
+  const url = `https://api.github.com/repos/${encodeURIComponent(p.githubUser)}/${encodeURIComponent(p.githubRepo)}/contents/${path}`;
+  // First, check if file exists to get sha (only for files we overwrite)
+  let sha = null;
+  if (!path.startsWith('history/')) {
+    try {
+      const getRes = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${p.githubToken}`, 'Accept': 'application/vnd.github+json' }
+      });
+      if (getRes.ok) {
+        const data = await getRes.json();
+        sha = data.sha;
+      }
+    } catch (e) { /* file doesn't exist, that's fine */ }
+  }
+
+  const body = { message, content: contentB64 };
+  if (sha) body.sha = sha;
+
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${p.githubToken}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.message || `HTTP ${res.status}`);
+  }
+}
+
+function b64EncodeUnicode(str) {
+  // Handle UTF-8 properly
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function b64DecodeUnicode(str) {
+  return decodeURIComponent(escape(atob(str.replace(/\s/g, ''))));
+}
+
+async function restoreFromGithub() {
+  const p = state.profile;
+  if (!p.githubUser || !p.githubRepo || !p.githubToken) {
+    alert('GitHub not configured.');
+    return;
+  }
+  if (!confirm('This will REPLACE your current data with the latest cloud backup. Continue?')) return;
+
+  try {
+    const url = `https://api.github.com/repos/${encodeURIComponent(p.githubUser)}/${encodeURIComponent(p.githubRepo)}/contents/latest.json`;
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${p.githubToken}`, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const fileData = await res.json();
+    const json = b64DecodeUnicode(fileData.content);
+    const data = JSON.parse(json);
+
+    state.vendors = data.vendors || [];
+    if (data.profile) {
+      // Don't overwrite GitHub credentials with old ones
+      const newProfile = { ...state.profile, ...data.profile };
+      newProfile.githubUser = state.profile.githubUser;
+      newProfile.githubRepo = state.profile.githubRepo;
+      newProfile.githubToken = state.profile.githubToken;
+      newProfile.githubEnabled = state.profile.githubEnabled;
+      state.profile = newProfile;
+    }
+    if (data.customVendorCategories) state.customVendorCategories = data.customVendorCategories;
+    if (data.customProductCategories) state.customProductCategories = data.customProductCategories;
+    if (data.customFabricTypes) state.customFabricTypes = data.customFabricTypes;
+
+    state.lastBackupAt = Date.now();
+    state.changesSinceBackup = 0;
+    saveState();
+    state.view = 'vendors';
+    render();
+    alert(`✓ Restored ${state.vendors.length} vendors from cloud backup.`);
+  } catch (err) {
+    alert('Restore failed: ' + err.message);
+  }
+}
+
+function updateBackupBannerOnly() {
+  // Only re-render the banner area if we're on vendor list
+  if (state.view !== 'vendors') return;
+  const oldBanner = document.querySelector('.backup-banner');
+  // Build new banner HTML
+  const tmp = document.createElement('div');
+  tmp.innerHTML = renderVendorList();
+  const newBanner = tmp.querySelector('.backup-banner');
+  if (oldBanner && newBanner) {
+    oldBanner.replaceWith(newBanner);
+    attachEventListeners();
+  } else if (newBanner) {
+    document.querySelector('.search-section')?.before(newBanner);
+    attachEventListeners();
+  } else if (oldBanner) {
+    oldBanner.remove();
+  }
 }
 
 async function handleImport(e) {
@@ -1456,6 +1879,8 @@ function downloadFile(name, content, type) {
 
 // =================== INIT ===================
 loadState();
+// If GitHub was previously enabled, mark status as ok by default (will fail visibly if token expired)
+if (state.profile.githubEnabled) state.githubStatus = 'ok';
 render();
 </script>
 </body>
